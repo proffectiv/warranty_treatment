@@ -126,8 +126,11 @@ def adapt_webhook_structure(webhook_data):
     New format: client_payload.fields (direct key-value mapping)
     Old format: data.fields (array of field objects)
     """
+    logger.info(f"Input webhook keys: {list(webhook_data.keys())}")
+    
     # Check if it's the new GitHub webhook structure
     if 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
+        logger.info("Detected new GitHub webhook structure - converting to old format")
         # New structure - convert to old format for compatibility
         fields = webhook_data['client_payload']['fields']
         
@@ -204,6 +207,7 @@ def adapt_webhook_structure(webhook_data):
         return adapted
     
     # Return original data if it's already in the old format
+    logger.info("Using original webhook data structure (old format)")
     return webhook_data
 
 def main():
@@ -223,6 +227,16 @@ def main():
         
         # Adapt webhook data structure for compatibility
         adapted_data = adapt_webhook_structure(webhook_data)
+        
+        # Debug logging
+        logger.info(f"Adapted data keys: {list(adapted_data.keys())}")
+        if 'data' in adapted_data:
+            logger.info(f"Data keys: {list(adapted_data['data'].keys())}")
+        else:
+            logger.error("Missing 'data' key in adapted webhook data!")
+            logger.error(f"Full adapted structure: {adapted_data}")
+            sys.exit(1)
+        
         success = process_warranty_form(adapted_data)
         sys.exit(0 if success else 1)
         
