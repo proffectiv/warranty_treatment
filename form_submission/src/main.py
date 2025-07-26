@@ -34,8 +34,8 @@ def process_warranty_form(webhook_data):
     logger.info(f"Event ID: {webhook_data.get('eventId', 'N/A')}")
     logger.info(f"Event Type: {webhook_data.get('eventType', 'N/A')}")
     
-    if webhook_data.get('eventType') != 'FORM_RESPONSE':
-        logger.error("Invalid event type. Expected 'FORM_RESPONSE'")
+    if webhook_data.get('eventType') != 'form-submission':
+        logger.error("Invalid event type. Expected 'form-submission'")
         return False
     
     # Check for duplicates before processing
