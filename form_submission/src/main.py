@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Main orchestrator script for warranty form automation
-This script processes webhook data from Tally forms and performs all necessary actions
+Warranty Form Submission Processor
+Handles webhook data from Tally forms and processes warranty submissions
 """
 
 import json
@@ -18,7 +18,7 @@ from send_confirmation_email import send_confirmation_email
 from send_notification_email import send_notification_email
 from update_excel_dropbox import update_excel_file, check_for_duplicates
 
-# Set up secure logging
+# Initialize logger
 logger = setup_secure_logging('main')
 
 def process_warranty_form(webhook_data):
@@ -44,19 +44,19 @@ def process_warranty_form(webhook_data):
     is_duplicate, probability, details = check_for_duplicates(webhook_data)
     
     if is_duplicate:
-        logger.warning(f"DUPLICATE DETECTED! Probability: {probability:.2%}")
-        logger.info(f"Threshold: {details['threshold']:.2%}")
-        logger.info(f"Brand: {details['brand']}")
+        logger.warning(f"DUPLICATE DETECTED! Probability: {probability:.2f}%")
+        logger.info(f"Threshold: {details.get('threshold', 75.0):.2f}%")
+        logger.info(f"Brand: {details.get('brand', 'N/A')}")
         
-        if details['similar_record']:
+        if 'probability_factors' in details:
             logger.info("Most similar record factors:")
-            for factor_name, score, weight in details['similar_record']['factors']:
-                logger.info(f"Factor {factor_name}: {score:.1%} (weight: {weight:.1%})")
+            for factor_name, factor_value, weight in details['probability_factors']:
+                logger.info(f"Factor {factor_name}: {factor_value:.1f}% (weight: {weight*100:.1f}%)")
         
         logger.warning("Automation STOPPED - Duplicate submission detected")
         return False
     else:
-        logger.info(f"No duplicates found (probability: {probability:.2%})")
+        logger.info(f"No duplicates found (probability: {probability:.2f}%)")
     
     # Generate unique ticket ID
     ticket_id = str(uuid.uuid4())
@@ -105,15 +105,16 @@ def process_warranty_form(webhook_data):
         logger.error(f"Error sending notification email: {str(e)}")
     
     # Summary
+    successful_tasks = sum(results.values())
+    total_tasks = len(results)
+    
     logger.info("Processing Summary:")
     logger.info(f"Confirmation Email: {'SUCCESS' if results['confirmation_email'] else 'FAILED'}")
     logger.info(f"Excel Update: {'SUCCESS' if results['excel_update'] else 'FAILED'}")
     logger.info(f"Notification Email: {'SUCCESS' if results['notification_email'] else 'FAILED'}")
+    logger.info(f"{successful_tasks}/{total_tasks} tasks completed successfully")
     
-    success_count = sum(results.values())
-    logger.info(f"{success_count}/3 tasks completed successfully")
-    
-    if success_count == 3:
+    if successful_tasks == total_tasks:
         logger.info("All warranty processing tasks completed successfully!")
         return True
     else:
@@ -123,92 +124,92 @@ def process_warranty_form(webhook_data):
 def adapt_webhook_structure(webhook_data):
     """
     Adapt webhook data structure for compatibility between old and new formats.
-    New format: client_payload.fields (direct key-value mapping)
-    Old format: data.fields (array of field objects)
     """
     logger.info(f"Input webhook keys: {list(webhook_data.keys())}")
     
-    # Check if it's the new GitHub webhook structure
-    if 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
-        logger.info("Detected new GitHub webhook structure - converting to old format")
-        # New structure - convert to old format for compatibility
-        fields = webhook_data['client_payload']['fields']
-        
-        # Convert to old format structure
-        adapted = {
-            'eventId': webhook_data.get('event_type', 'github-webhook'),
-            'eventType': 'form-submission',
-            'createdAt': datetime.now().isoformat() + 'Z',
-            'data': {
-                'fields': [],
-                'createdAt': datetime.now().isoformat() + 'Z',
-                'responseId': 'GITHUB-' + str(hash(str(fields)))[-8:],
-                'submissionId': 'GITHUB-' + str(hash(str(fields)))[-8:],
-                'respondentId': 'GitHubWebhook'
-            }
-        }
-        
-        # Convert fields from key-value to field objects
-        # Map field names to question IDs for compatibility
-        field_mapping = {
-            'Empresa': 'question_59JjXb',
-            'NIF/CIF/VAT': 'question_d0OabN',
-            'Email': 'question_oRq2oM',
-            'Marca del Producto': 'question_YG10j0',
-            'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)': 'question_Dpjkqp',
-            'Conway - Talla': 'question_lOxea6',
-            'Cycplus - Modelo': 'question_2Apa7p',
-            'Dare - Modelo': 'question_GpZ952',
-            'Dare - Talla': 'question_OX64kp',
-            'Adjunta la factura de compra': 'question_GpZlqz',
-            'Conway - Adjunta la factura de compra a Hartje': 'question_VPKQpl',
-            'Conway - Adjunta la factura de venta': 'question_P971R0',
-            'Cycplus - Adjunta la factura de venta': 'question_oRqevX',
-            'Dare - Adjunta la factura de compra': 'question_OX6GbA',
-            'Dare - Adjunta la factura de venta': 'question_47MJOB'
-        }
-        
-        for key, value in fields.items():
-            # Use mapped key if available, otherwise use original key
-            mapped_key = field_mapping.get(key, key)
-            
-            # Determine field type
-            field_type = 'INPUT_TEXT'
-            if 'Email' in key:
-                field_type = 'INPUT_EMAIL'
-            elif 'Descripción' in key or 'problema' in key or 'Solución' in key:
-                field_type = 'TEXTAREA'
-            elif 'Marca del Producto' in key or 'Modelo' in key or 'Estado' in key or 'Talla' in key:
-                field_type = 'DROPDOWN'
-            elif 'factura' in key.lower() or 'adjunta' in key.lower():
-                field_type = 'FILE_UPLOAD'
-            
-            field_obj = {
-                'key': mapped_key,
-                'label': key,
-                'type': field_type,
-                'value': value
-            }
-            
-            # For brand field, add options for compatibility
-            if key == 'Marca del Producto':
-                field_obj['options'] = [
-                    {'id': 'Conway', 'text': 'Conway'},
-                    {'id': 'Cycplus', 'text': 'Cycplus'},
-                    {'id': 'Dare', 'text': 'Dare'},
-                    {'id': 'Kogel', 'text': 'Kogel'}
-                ]
-                # Convert value to expected format if it's already a string
-                if isinstance(value, list) and len(value) > 0:
-                    field_obj['value'] = [value[0]]  # Keep as list
-                
-            adapted['data']['fields'].append(field_obj)
-            
-        return adapted
+    # Determine webhook structure and extract fields
+    fields = None
+    event_id = None
     
-    # Return original data if it's already in the old format
-    logger.info("Using original webhook data structure (old format)")
-    return webhook_data
+    if 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
+        logger.info("Detected GitHub webhook structure with client_payload")
+        fields = webhook_data['client_payload']['fields']
+        event_id = webhook_data.get('event_type', 'github-webhook')
+    elif 'eventType' in webhook_data and 'fields' in webhook_data and isinstance(webhook_data['fields'], dict):
+        logger.info("Detected direct fields webhook structure")
+        fields = webhook_data['fields']
+        event_id = webhook_data.get('eventId', 'direct-webhook')
+    else:
+        logger.info("Using original webhook data structure (old format)")
+        return webhook_data
+    
+    # Convert new format to old format
+    adapted = {
+        'eventId': event_id,
+        'eventType': 'form-submission',
+        'createdAt': datetime.now().isoformat() + 'Z',
+        'data': {
+            'fields': [],
+            'createdAt': datetime.now().isoformat() + 'Z',
+            'responseId': 'GITHUB-' + str(hash(str(fields)))[-8:],
+            'submissionId': 'GITHUB-' + str(hash(str(fields)))[-8:],
+            'respondentId': 'GitHubWebhook'
+        }
+    }
+    
+    # Field mapping for compatibility
+    field_mapping = {
+        'Empresa': 'question_59JjXb',
+        'NIF/CIF/VAT': 'question_d0OabN',
+        'Email': 'question_oRq2oM',
+        'Marca del Producto': 'question_YG10j0',
+        'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)': 'question_Dpjkqp',
+        'Conway - Talla': 'question_lOxea6',
+        'Cycplus - Modelo': 'question_2Apa7p',
+        'Dare - Modelo': 'question_GpZ952',
+        'Dare - Talla': 'question_OX64kp',
+        'Adjunta la factura de compra': 'question_GpZlqz',
+        'Conway - Adjunta la factura de compra a Hartje': 'question_VPKQpl',
+        'Conway - Adjunta la factura de venta': 'question_P971R0',
+        'Cycplus - Adjunta la factura de venta': 'question_oRqevX',
+        'Dare - Adjunta la factura de compra': 'question_OX6GbA',
+        'Dare - Adjunta la factura de venta': 'question_47MJOB'
+    }
+    
+    # Convert fields to old format
+    for key, value in fields.items():
+        mapped_key = field_mapping.get(key, key)
+        
+        # Determine field type
+        field_type = 'INPUT_TEXT'
+        if 'Email' in key:
+            field_type = 'INPUT_EMAIL'
+        elif 'Descripción' in key or 'problema' in key or 'Solución' in key:
+            field_type = 'TEXTAREA'
+        elif 'Marca del Producto' in key or 'Modelo' in key or 'Estado' in key or 'Talla' in key:
+            field_type = 'DROPDOWN'
+        elif 'factura' in key.lower() or 'adjunta' in key.lower():
+            field_type = 'FILE_UPLOAD'
+        
+        field_obj = {
+            'key': mapped_key,
+            'label': key,
+            'type': field_type,
+            'value': value
+        }
+        
+        # Add options for brand field
+        if key == 'Marca del Producto':
+            field_obj['options'] = [
+                {'id': 'Conway', 'text': 'Conway'},
+                {'id': 'Cycplus', 'text': 'Cycplus'},
+                {'id': 'Dare', 'text': 'Dare'},
+                {'id': 'Kogel', 'text': 'Kogel'}
+            ]
+            
+        adapted['data']['fields'].append(field_obj)
+    
+    return adapted
 
 def main():
     """Main entry point"""

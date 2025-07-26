@@ -38,9 +38,6 @@ jobs:
         echo "DROPBOX_APP_SECRET=${{ secrets.DROPBOX_APP_SECRET }}" >> $GITHUB_ENV
         echo "DROPBOX_REFRESH_TOKEN=${{ secrets.DROPBOX_REFRESH_TOKEN }}" >> $GITHUB_ENV
         echo "DROPBOX_FOLDER_PATH=${{ secrets.DROPBOX_FOLDER_PATH }}" >> $GITHUB_ENV
-        echo "DROPBOX_EMAIL_FOR_AUTOMATIONS=${{ secrets.DROPBOX_EMAIL_FOR_AUTOMATIONS }}" >> $GITHUB_ENV
-        echo "HOLDED_API_KEY=${{ secrets.HOLDED_API_KEY }}" >> $GITHUB_ENV
-        echo "HOLDED_BASE_URL=${{ secrets.HOLDED_BASE_URL }}" >> $GITHUB_ENV
     
     - name: Run form submission automation
       working-directory: form_submission/src
