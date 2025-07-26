@@ -2,7 +2,7 @@ name: Form Submission Automation
 
 on:
   repository_dispatch:
-    types: [FORM_RESPONSE]
+    types: [form-submission]
 
 jobs:
   process-warranty-form:

@@ -55,3 +55,4 @@ htmlcov/
 .pytest_cache/
 .claude/
 tests/
+test.py
