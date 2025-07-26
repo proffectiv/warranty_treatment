@@ -34,8 +34,9 @@ def process_warranty_form(webhook_data):
     logger.info(f"Event ID: {webhook_data.get('eventId', 'N/A')}")
     logger.info(f"Event Type: {webhook_data.get('eventType', 'N/A')}")
     
-    if webhook_data.get('eventType') != 'form-submission':
-        logger.error("Invalid event type. Expected 'form-submission'")
+    valid_event_types = ['form-submission', 'FORM_RESPONSE']
+    if webhook_data.get('eventType') not in valid_event_types:
+        logger.error(f"Invalid event type. Expected one of: {valid_event_types}")
         return False
     
     # Check for duplicates before processing
@@ -119,6 +120,92 @@ def process_warranty_form(webhook_data):
         logger.warning("Some tasks failed. Check previous log entries for details.")
         return False
 
+def adapt_webhook_structure(webhook_data):
+    """
+    Adapt webhook data structure for compatibility between old and new formats.
+    New format: client_payload.fields (direct key-value mapping)
+    Old format: data.fields (array of field objects)
+    """
+    # Check if it's the new GitHub webhook structure
+    if 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
+        # New structure - convert to old format for compatibility
+        fields = webhook_data['client_payload']['fields']
+        
+        # Convert to old format structure
+        adapted = {
+            'eventId': webhook_data.get('event_type', 'github-webhook'),
+            'eventType': 'form-submission',
+            'createdAt': datetime.now().isoformat() + 'Z',
+            'data': {
+                'fields': [],
+                'createdAt': datetime.now().isoformat() + 'Z',
+                'responseId': 'GITHUB-' + str(hash(str(fields)))[-8:],
+                'submissionId': 'GITHUB-' + str(hash(str(fields)))[-8:],
+                'respondentId': 'GitHubWebhook'
+            }
+        }
+        
+        # Convert fields from key-value to field objects
+        # Map field names to question IDs for compatibility
+        field_mapping = {
+            'Empresa': 'question_59JjXb',
+            'NIF/CIF/VAT': 'question_d0OabN',
+            'Email': 'question_oRq2oM',
+            'Marca del Producto': 'question_YG10j0',
+            'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)': 'question_Dpjkqp',
+            'Conway - Talla': 'question_lOxea6',
+            'Cycplus - Modelo': 'question_2Apa7p',
+            'Dare - Modelo': 'question_GpZ952',
+            'Dare - Talla': 'question_OX64kp',
+            'Adjunta la factura de compra': 'question_GpZlqz',
+            'Conway - Adjunta la factura de compra a Hartje': 'question_VPKQpl',
+            'Conway - Adjunta la factura de venta': 'question_P971R0',
+            'Cycplus - Adjunta la factura de venta': 'question_oRqevX',
+            'Dare - Adjunta la factura de compra': 'question_OX6GbA',
+            'Dare - Adjunta la factura de venta': 'question_47MJOB'
+        }
+        
+        for key, value in fields.items():
+            # Use mapped key if available, otherwise use original key
+            mapped_key = field_mapping.get(key, key)
+            
+            # Determine field type
+            field_type = 'INPUT_TEXT'
+            if 'Email' in key:
+                field_type = 'INPUT_EMAIL'
+            elif 'Descripción' in key or 'problema' in key or 'Solución' in key:
+                field_type = 'TEXTAREA'
+            elif 'Marca del Producto' in key or 'Modelo' in key or 'Estado' in key or 'Talla' in key:
+                field_type = 'DROPDOWN'
+            elif 'factura' in key.lower() or 'adjunta' in key.lower():
+                field_type = 'FILE_UPLOAD'
+            
+            field_obj = {
+                'key': mapped_key,
+                'label': key,
+                'type': field_type,
+                'value': value
+            }
+            
+            # For brand field, add options for compatibility
+            if key == 'Marca del Producto':
+                field_obj['options'] = [
+                    {'id': 'Conway', 'text': 'Conway'},
+                    {'id': 'Cycplus', 'text': 'Cycplus'},
+                    {'id': 'Dare', 'text': 'Dare'},
+                    {'id': 'Kogel', 'text': 'Kogel'}
+                ]
+                # Convert value to expected format if it's already a string
+                if isinstance(value, list) and len(value) > 0:
+                    field_obj['value'] = [value[0]]  # Keep as list
+                
+            adapted['data']['fields'].append(field_obj)
+            
+        return adapted
+    
+    # Return original data if it's already in the old format
+    return webhook_data
+
 def main():
     """Main entry point"""
     if len(sys.argv) != 2:
@@ -133,7 +220,10 @@ def main():
             webhook_data = json.load(f)
         
         logger.info(f"Processing webhook data from file: {webhook_file}")
-        success = process_warranty_form(webhook_data)
+        
+        # Adapt webhook data structure for compatibility
+        adapted_data = adapt_webhook_structure(webhook_data)
+        success = process_warranty_form(adapted_data)
         sys.exit(0 if success else 1)
         
     except FileNotFoundError:
