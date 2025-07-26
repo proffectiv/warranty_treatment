@@ -28,7 +28,12 @@ def get_field_value(fields, key):
         if field['key'] == key:
             if field['type'] == 'DROPDOWN' and field['value']:
                 if isinstance(field['value'], list) and len(field['value']) > 0:
-                    return get_brand_display_name(field['value'][0], field.get('options', []))
+                    # Only use get_brand_display_name for brand field (question_YG10j0)
+                    if key == 'question_YG10j0':
+                        return get_brand_display_name(field['value'][0], field.get('options', []))
+                    else:
+                        # For other dropdown fields, return the value directly
+                        return field['value'][0]
                 return field['value']
             return field['value'] if field['value'] else 'No especificado'
     return 'No especificado'
@@ -85,7 +90,6 @@ def create_notification_email(form_data):
         logger.warning(f"Unknown brand: {marca}. Using default values.")
     
     fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
-    response_id = form_data['responseId']
 
     style = """
     <style>
@@ -109,7 +113,6 @@ def create_notification_email(form_data):
         <div style="background-color: #e8f4fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
             <h3>📋 Información General</h3>
             <ul>
-                <li><strong>ID de Respuesta:</strong> {response_id}</li>
                 <li><strong>Fecha y Hora:</strong> {fecha_creacion}</li>
                 <li><strong>Empresa:</strong> {empresa}</li>
                 <li><strong>NIF/CIF/VAT:</strong> {nif_cif}</li>
