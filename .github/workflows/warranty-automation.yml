@@ -1,0 +1,65 @@
+name: Warranty Form Automation
+
+on:
+  repository_dispatch:
+    types: [FORM_RESPONSE]
+
+jobs:
+  process-warranty-form:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas requests python-dotenv smtplib-ssl xlsxwriter openpyxl
+    
+    - name: Create webhook data file
+      run: |
+        echo '${{ toJson(github.event.client_payload) }}' > webhook_data.json
+        cat webhook_data.json
+    
+    - name: Set up environment variables
+      run: |
+        echo "TALLY_API_KEY=${{ secrets.TALLY_API_KEY }}" >> $GITHUB_ENV
+        echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> $GITHUB_ENV
+        echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> $GITHUB_ENV
+        echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}" >> $GITHUB_ENV
+        echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> $GITHUB_ENV
+        echo "DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}" >> $GITHUB_ENV
+        echo "DROPBOX_APP_SECRET=${{ secrets.DROPBOX_APP_SECRET }}" >> $GITHUB_ENV
+        echo "DROPBOX_REFRESH_TOKEN=${{ secrets.DROPBOX_REFRESH_TOKEN }}" >> $GITHUB_ENV
+        echo "DROPBOX_FOLDER_PATH=${{ secrets.DROPBOX_FOLDER_PATH }}" >> $GITHUB_ENV
+        echo "DROPBOX_EMAIL_FOR_AUTOMATIONS=${{ secrets.DROPBOX_EMAIL_FOR_AUTOMATIONS }}" >> $GITHUB_ENV
+        echo "HOLDED_API_KEY=${{ secrets.HOLDED_API_KEY }}" >> $GITHUB_ENV
+        echo "HOLDED_BASE_URL=${{ secrets.HOLDED_BASE_URL }}" >> $GITHUB_ENV
+    
+    - name: Send confirmation email to client
+      run: |
+        python send_confirmation_email.py webhook_data.json
+      continue-on-error: true
+    
+    - name: Update Excel file in Dropbox
+      run: |
+        python update_excel_dropbox.py webhook_data.json
+      continue-on-error: true
+    
+    - name: Send notification email
+      run: |
+        python send_notification_email.py webhook_data.json
+      continue-on-error: true
+    
+    - name: Log completion
+      run: |
+        echo "Warranty automation completed for form response"
+        echo "Event ID: ${{ github.event.client_payload.eventId }}"
+        echo "Response ID: ${{ github.event.client_payload.data.responseId }}"
+        echo "Form: ${{ github.event.client_payload.data.formName }}"
