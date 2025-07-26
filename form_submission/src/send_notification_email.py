@@ -179,6 +179,20 @@ def send_notification_email(webhook_data):
         smtp_password = os.getenv('SMTP_PASSWORD')
         notification_email = os.getenv('NOTIFICATION_EMAIL')
         
+        # Debug email configuration
+        logger.info(f"Email config - Host: {smtp_host}, Port: {smtp_port}, Notification email: {notification_email}")
+        
+        # Check for missing configuration
+        if not all([smtp_host, smtp_port, smtp_username, smtp_password, notification_email]):
+            missing = [k for k, v in {
+                'SMTP_HOST': smtp_host,
+                'SMTP_PORT': smtp_port, 
+                'SMTP_USERNAME': smtp_username,
+                'SMTP_PASSWORD': smtp_password,
+                'NOTIFICATION_EMAIL': notification_email
+            }.items() if not v]
+            raise Exception(f"Missing email configuration: {missing}")
+        
         empresa = None
         for field in form_data['fields']:
             if field['key'] == 'question_59JjXb':
@@ -197,9 +211,20 @@ def send_notification_email(webhook_data):
         msg.attach(html_part)
         
         # Send email
+        logger.info("Attempting to send notification email...")
         with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
+            logger.info("SMTP connection established")
             server.login(smtp_username, smtp_password)
-            server.send_message(msg)
+            logger.info("SMTP login successful")
+            
+            send_result = server.send_message(msg)
+            logger.info(f"SMTP send_message result: {send_result}")
+            
+            # Check if send_message returned any failed recipients
+            if send_result:
+                logger.warning(f"Some recipients failed: {send_result}")
+            else:
+                logger.info("All recipients accepted successfully")
             
         logger.info(f"Notification email sent successfully to admin")
         return True
