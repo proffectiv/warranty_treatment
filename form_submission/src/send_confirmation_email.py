@@ -97,11 +97,9 @@ def create_confirmation_email(form_data):
             </ul>
         </div>
         
-        <p><strong>Su solicitud de garantía ha sido registrada correctamente.</strong></p>
-        
         <p>Nuestro equipo revisará su solicitud y nos pondremos en contacto con usted lo antes posible para informarle sobre el estado de su caso y los próximos pasos a seguir.</p>
         
-        <p>Si tiene alguna pregunta urgente, no dude en contactarnos.</p>
+        <p>Si tiene alguna duda, no dude en contactarnos.</p>
         
         <br>
         <p>Saludos cordiales,<p>
