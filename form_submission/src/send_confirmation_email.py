@@ -31,8 +31,12 @@ def get_field_value(fields, key):
                 if isinstance(field['value'], list) and len(field['value']) > 0:
                     # For all dropdown fields, get the display text from options
                     return get_brand_display_name(field['value'][0], field.get('options', []))
-                return field['value']
-            return field['value'] if field['value'] else 'No especificado'
+                elif isinstance(field['value'], str):
+                    return field['value']
+                else:
+                    return 'No especificado'
+            # Always return string, never None or list
+            return str(field['value']) if field['value'] and field['value'] != 'null' else 'No especificado'
     return 'No especificado'
 
 def create_confirmation_email(form_data):
@@ -109,8 +113,8 @@ def create_confirmation_email(form_data):
             <ul>
                 <li><strong>Marca:</strong> {marca}</li>
                 <li><strong>Modelo:</strong> {modelo}</li>
-                {"<li><strong>Talla:</strong> " + talla + "</li>" if talla != 'No aplicable' else ""}
-                {"<li><strong>Año de fabricación:</strong> " + año + "</li>" if año != 'No aplicable' else ""}
+                {"<li><strong>Talla:</strong> " + str(talla) + "</li>" if talla != 'No aplicable' else ""}
+                {"<li><strong>Año de fabricación:</strong> " + str(año) + "</li>" if año != 'No aplicable' else ""}
                 <li><strong>Estado:</strong> {estado}</li>
                 <li><strong>Descripción del problema:</strong> {problema}</li>
             </ul>

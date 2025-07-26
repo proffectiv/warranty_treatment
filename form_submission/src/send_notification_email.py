@@ -31,8 +31,12 @@ def get_field_value(fields, key):
                 if isinstance(field['value'], list) and len(field['value']) > 0:
                     # For all dropdown fields, get the display text from options
                     return get_brand_display_name(field['value'][0], field.get('options', []))
-                return field['value']
-            return field['value'] if field['value'] else 'No especificado'
+                elif isinstance(field['value'], str):
+                    return field['value']
+                else:
+                    return 'No especificado'
+            # Always return string, never None or list
+            return str(field['value']) if field['value'] and field['value'] != 'null' else 'No especificado'
     return 'No especificado'
 
 def create_notification_email(form_data):
@@ -123,8 +127,8 @@ def create_notification_email(form_data):
             <ul>
                 <li><strong>Marca:</strong> {marca}</li>
                 <li><strong>Modelo:</strong> {modelo}</li>
-                {"<li><strong>Talla:</strong> " + talla + "</li>" if talla != 'No aplicable' else ""}
-                {"<li><strong>Año de fabricación:</strong> " + año + "</li>" if año != 'No aplicable' else ""}
+                {"<li><strong>Talla:</strong> " + str(talla) + "</li>" if talla != 'No aplicable' else ""}
+                {"<li><strong>Año de fabricación:</strong> " + str(año) + "</li>" if año != 'No aplicable' else ""}
                 <li><strong>Estado del producto:</strong> {estado}</li>
             </ul>
         </div>
@@ -132,7 +136,7 @@ def create_notification_email(form_data):
         <div style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0;">
             <h3>⚠️ Problema Reportado</h3>
             <p><strong>{problema}</strong></p>
-            {"<h4>💡 Solución Propuesta:</h4><p>" + solucion + "</p>" if solucion != 'No aplicable' and solucion != 'No especificado' else ""}
+            {"<h4>💡 Solución Propuesta:</h4><p>" + str(solucion) + "</p>" if solucion != 'No aplicable' and solucion != 'No especificado' else ""}
         </div>
         
         <div style="background-color: #f3e5f5; padding: 15px; border-left: 4px solid #9c27b0; margin: 20px 0;">
