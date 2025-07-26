@@ -17,47 +17,36 @@ load_dotenv()
 # Set up secure logging
 logger = setup_secure_logging('notification_email')
 
-def get_field_value_by_name(fields, field_name):
-    """Get field value using human-readable field name from new webhook structure"""
-    value = fields.get(field_name)
-    
-    if value is None:
-        return 'No especificado'
-    
-    # Handle different value types
-    if isinstance(value, list):
-        if len(value) > 0:
-            # For dropdown selections, return the first value
-            if isinstance(value[0], dict):
-                # File upload - return file info
-                return f"Archivo adjunto: {value[0].get('name', 'archivo')}"
-            else:
-                # Dropdown selection - return the selected value
-                return str(value[0])
-        else:
-            return 'No especificado'
-    elif isinstance(value, str):
-        return value if value.strip() else 'No especificado'
-    else:
-        return str(value) if value else 'No especificado'
+def get_brand_display_name(brand_id, options):
+    """Get display text from dropdown options based on ID"""
+    for option in options:
+        if option['id'] == brand_id:
+            return option['text']
+    return 'No especificado'
 
-def create_notification_email(webhook_data):
-    # Extract fields from new webhook structure
-    if 'client_payload' in webhook_data:
-        # New GitHub webhook structure
-        fields = webhook_data['client_payload']['fields']
-        ticket_id = webhook_data.get('ticket_id', 'No disponible')
-    else:
-        # Fallback to old structure if needed
-        form_data = webhook_data.get('data', webhook_data)
-        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        ticket_id = form_data.get('ticket_id', 'No disponible')
+def get_field_value(fields, key):
+    for field in fields:
+        if field['key'] == key:
+            if field['type'] == 'DROPDOWN' and field['value']:
+                if isinstance(field['value'], list) and len(field['value']) > 0:
+                    # For all dropdown fields, get the display text from options
+                    return get_brand_display_name(field['value'][0], field.get('options', []))
+                elif isinstance(field['value'], str):
+                    return field['value']
+                else:
+                    return 'No especificado'
+            # Always return string, never None or list
+            return str(field['value']) if field['value'] and field['value'] != 'null' else 'No especificado'
+    return 'No especificado'
+
+def create_notification_email(form_data):
+    fields = form_data['fields']
+    ticket_id = form_data.get('ticket_id', 'No disponible')
     
-    # Get basic info using human-readable field names
-    empresa = get_field_value_by_name(fields, 'Empresa')
-    nif_cif = get_field_value_by_name(fields, 'NIF/CIF/VAT')
-    email = get_field_value_by_name(fields, 'Email')
-    marca = get_field_value_by_name(fields, 'Marca del Producto')
+    empresa = get_field_value(fields, 'question_59JjXb')
+    nif_cif = get_field_value(fields, 'question_d0OabN')
+    email = get_field_value(fields, 'question_oRq2oM')
+    marca = get_field_value(fields, 'question_YG10j0')
     
     # Initialize all variables with defaults
     modelo = 'No especificado'
@@ -69,40 +58,40 @@ def create_notification_email(webhook_data):
     factura_compra = 'No'
     factura_venta = 'No'
     
-    # Brand-specific fields using human-readable field names
+    # Brand-specific fields
     if marca == 'Conway':
-        modelo = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
-        talla = get_field_value_by_name(fields, 'Conway - Talla')
-        año = get_field_value_by_name(fields, 'Conway - Año de fabricación')
-        estado = get_field_value_by_name(fields, 'Conway - Estado de la bicicleta')
-        problema = get_field_value_by_name(fields, 'Conway - Descripción del problema')
-        solucion = get_field_value_by_name(fields, 'Conway - Solución o reparación propuesta y presupuesto aproximado')
-        factura_compra = 'Sí' if get_field_value_by_name(fields, 'Conway - Adjunta la factura de compra a Hartje') != 'No especificado' else 'No'
-        factura_venta = 'Sí' if get_field_value_by_name(fields, 'Conway - Adjunta la factura de venta') != 'No especificado' else 'No'
+        modelo = get_field_value(fields, 'question_Dpjkqp')
+        talla = get_field_value(fields, 'question_lOxea6')
+        año = get_field_value(fields, 'question_RoAMWP')
+        estado = get_field_value(fields, 'question_oRqe9M')
+        problema = get_field_value(fields, 'question_GpZ9ez')
+        solucion = get_field_value(fields, 'question_OX64QA')
+        factura_compra = 'Sí' if get_field_value(fields, 'question_VPKQpl') != 'No especificado' else 'No'
+        factura_venta = 'Sí' if get_field_value(fields, 'question_P971R0') != 'No especificado' else 'No'
     elif marca == 'Cycplus':
-        modelo = get_field_value_by_name(fields, 'Cycplus - Modelo')
-        estado = get_field_value_by_name(fields, 'Cycplus - Estado del Producto')
-        problema = get_field_value_by_name(fields, 'Cycplus - Descripción del problema')
-        factura_compra = 'Sí' if get_field_value_by_name(fields, 'Adjunta la factura de compra') != 'No especificado' else 'No'
-        factura_venta = 'Sí' if get_field_value_by_name(fields, 'Cycplus - Adjunta la factura de venta') != 'No especificado' else 'No'
+        modelo = get_field_value(fields, 'question_2Apa7p')
+        estado = get_field_value(fields, 'question_xDAMvG')
+        problema = get_field_value(fields, 'question_RoAMkp')
+        factura_compra = 'Sí' if get_field_value(fields, 'question_GpZlqz') != 'No especificado' else 'No'
+        factura_venta = 'Sí' if get_field_value(fields, 'question_oRqevX') != 'No especificado' else 'No'
         talla = 'No aplicable'
         año = 'No aplicable'
         solucion = 'No aplicable'
+        
     elif marca == 'Dare':
-        modelo = get_field_value_by_name(fields, 'Dare - Modelo')
-        talla = get_field_value_by_name(fields, 'Dare - Talla')
-        año = get_field_value_by_name(fields, 'Dare - Año de fabricación')
-        estado = get_field_value_by_name(fields, 'Dare - Estado de la bicicleta')
-        problema = get_field_value_by_name(fields, 'Dare - Descripción del problema')
-        solucion = get_field_value_by_name(fields, 'Dare - Solución o reparación propuesta y presupuesto aproximado')
-        factura_compra = 'Sí' if get_field_value_by_name(fields, 'Dare - Adjunta la factura de compra') != 'No especificado' else 'No'
-        factura_venta = 'Sí' if get_field_value_by_name(fields, 'Dare - Adjunta la factura de venta') != 'No especificado' else 'No'
+        modelo = get_field_value(fields, 'question_GpZ952')
+        talla = get_field_value(fields, 'question_OX64kp')
+        año = get_field_value(fields, 'question_VPKQNE')
+        estado = get_field_value(fields, 'question_P971rd')
+        problema = get_field_value(fields, 'question_El2d6q')
+        solucion = get_field_value(fields, 'question_rOeaY5')
+        factura_compra = 'Sí' if get_field_value(fields, 'question_OX6GbA') != 'No especificado' else 'No'
+        factura_venta = 'Sí' if get_field_value(fields, 'question_47MJOB') != 'No especificado' else 'No'
     else:
-        # Handle unknown brands or missing brand info
+        # Handle unknown brands or missing brand info - use defaults already set above
         logger.warning(f"Unknown brand: {marca}. Using default values.")
     
-    # Get creation date
-    fecha_creacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
 
     style = """
     <style>
@@ -185,7 +174,8 @@ def create_notification_email(webhook_data):
 
 def send_notification_email(webhook_data):
     try:
-        html_content = create_notification_email(webhook_data)
+        form_data = webhook_data['data']
+        html_content = create_notification_email(form_data)
         
         # Email configuration
         smtp_host = os.getenv('SMTP_HOST')
@@ -208,22 +198,15 @@ def send_notification_email(webhook_data):
             }.items() if not v]
             raise Exception(f"Missing email configuration: {missing}")
         
-        # Get empresa from webhook data
-        if 'client_payload' in webhook_data:
-            empresa = get_field_value_by_name(webhook_data['client_payload']['fields'], 'Empresa')
-            ticket_id = webhook_data.get('ticket_id', 'N/A')
-        else:
-            # Fallback for old structure
-            form_data = webhook_data.get('data', webhook_data)
-            empresa = 'N/A'
-            for field in form_data.get('fields', []):
-                if field.get('key') == 'question_59JjXb':
-                    empresa = field.get('value', 'N/A')
-                    break
-            ticket_id = form_data.get('ticket_id', 'N/A')
+        empresa = None
+        for field in form_data['fields']:
+            if field['key'] == 'question_59JjXb':
+                empresa = field['value']
+                break
         
         # Create message
         msg = MIMEMultipart('alternative')
+        ticket_id = form_data.get('ticket_id', 'N/A')
         msg['Subject'] = f"🔔 Nueva Garantía: {empresa} - Ticket: {ticket_id}"
         msg['From'] = smtp_username
         msg['To'] = notification_email

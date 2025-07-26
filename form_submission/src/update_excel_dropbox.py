@@ -71,28 +71,29 @@ def upload_excel_to_dropbox(access_token, file_path, excel_data):
     else:
         raise Exception(f"Failed to upload file: {response.text}")
 
-def get_brand_display_name(brand_id, options):
-    """Get display text from dropdown options based on ID"""
-    for option in options:
-        if option['id'] == brand_id:
-            return option['text']
-    return 'No especificado'
-
-def get_field_value(fields, key):
-    """Extract field value from form fields"""
-    for field in fields:
-        if field['key'] == key:
-            if field['type'] == 'DROPDOWN' and field['value']:
-                if isinstance(field['value'], list) and len(field['value']) > 0:
-                    # For all dropdown fields, get the display text from options
-                    return get_brand_display_name(field['value'][0], field.get('options', []))
-                return field['value']
-            elif field['type'] == 'FILE_UPLOAD' and field['value']:
-                if isinstance(field['value'], list) and len(field['value']) > 0:
-                    return field['value'][0]['url']
-                return 'Archivo adjunto'
-            return field['value'] if field['value'] else ''
-    return ''
+def get_field_value_by_name(fields, field_name):
+    """Get field value using human-readable field name from new webhook structure"""
+    value = fields.get(field_name)
+    
+    if value is None:
+        return ''
+    
+    # Handle different value types
+    if isinstance(value, list):
+        if len(value) > 0:
+            # For dropdown selections, return the first value
+            if isinstance(value[0], dict):
+                # File upload - return URL
+                return value[0].get('url', '')
+            else:
+                # Dropdown selection - return the selected value
+                return str(value[0])
+        else:
+            return ''
+    elif isinstance(value, str):
+        return value if value.strip() else ''
+    else:
+        return str(value) if value else ''
 
 def text_similarity(text1, text2):
     """Calculate similarity between two texts using SequenceMatcher"""
@@ -102,27 +103,34 @@ def text_similarity(text1, text2):
         return 0.0
     return SequenceMatcher(None, str(text1).lower(), str(text2).lower()).ratio()
 
-def calculate_duplicate_probability(form_data, existing_df):
+def calculate_duplicate_probability(webhook_data, existing_df):
     """
     Calculate the probability that this form submission is a duplicate
     Returns probability (0.0-1.0) and the most similar existing record
     """
-    fields = form_data['fields']
-    current_nif = get_field_value(fields, 'question_d0OabN').strip().upper()
-    current_email = get_field_value(fields, 'question_oRq2oM').strip().lower()
-    current_brand = get_field_value(fields, 'question_YG10j0')
-    current_time = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00'))
+    # Extract fields from new webhook structure
+    if 'client_payload' in webhook_data:
+        fields = webhook_data['client_payload']['fields']
+    else:
+        # Fallback to old structure
+        form_data = webhook_data.get('data', webhook_data)
+        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
+    
+    current_nif = get_field_value_by_name(fields, 'NIF/CIF/VAT').strip().upper()
+    current_email = get_field_value_by_name(fields, 'Email').strip().lower()
+    current_brand = get_field_value_by_name(fields, 'Marca del Producto')
+    current_time = datetime.now()
     
     # Get current submission details based on brand
     if current_brand == 'Conway':
-        current_model = get_field_value(fields, 'question_Dpjkqp')
-        current_size = get_field_value(fields, 'question_lOxea6')
+        current_model = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
+        current_size = get_field_value_by_name(fields, 'Conway - Talla')
     elif current_brand == 'Cycplus':
-        current_model = get_field_value(fields, 'question_2Apa7p')
+        current_model = get_field_value_by_name(fields, 'Cycplus - Modelo')
         current_size = 'N/A'  # No size for Cycplus
     elif current_brand == 'Dare':
-        current_model = get_field_value(fields, 'question_GpZ952')
-        current_size = get_field_value(fields, 'question_OX64kp')
+        current_model = get_field_value_by_name(fields, 'Dare - Modelo')
+        current_size = get_field_value_by_name(fields, 'Dare - Talla')
     elif current_brand == 'Kogel':
         current_model = ''
         current_size = 'N/A'  # No size for Kogel
@@ -211,18 +219,17 @@ def check_for_duplicates(webhook_data):
     Returns (is_duplicate, probability, details)
     """
     try:
-        form_data = webhook_data['data']
+        # Extract fields from new webhook structure
+        if 'client_payload' in webhook_data:
+            fields = webhook_data['client_payload']['fields']
+        else:
+            # Fallback to old structure
+            form_data = webhook_data.get('data', webhook_data)
+            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
         
-        # Get brand to know which sheet to check
-        fields = form_data['fields']
-        brand = None
-        for field in fields:
-            if field['key'] == 'question_YG10j0':
-                if field['value'] and isinstance(field['value'], list):
-                    brand = get_brand_display_name(field['value'][0], field.get('options', []))
-                break
+        brand = get_field_value_by_name(fields, 'Marca del Producto')
         
-        if not brand:
+        if not brand or brand == 'No especificado':
             return False, 0.0, "Could not determine brand"
         
         # Download and check Excel file
@@ -239,7 +246,7 @@ def check_for_duplicates(webhook_data):
             return False, 0.0, f"Could not access existing records: {str(e)}"
         
         # Calculate duplicate probability
-        probability, similar_record = calculate_duplicate_probability(form_data, df)
+        probability, similar_record = calculate_duplicate_probability(webhook_data, df)
         
         # Define threshold for considering it a duplicate
         DUPLICATE_THRESHOLD = 0.75  # 75% similarity threshold
@@ -259,16 +266,24 @@ def check_for_duplicates(webhook_data):
         logger.error(f"Error during duplicate check: {str(e)}")
         return False, 0.0, f"Error during duplicate check: {str(e)}"
 
-def prepare_row_data(form_data, brand):
+def prepare_row_data(webhook_data, brand):
     """Prepare row data based on brand"""
-    fields = form_data['fields']
-    fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y')
-    ticket_id = form_data.get('ticket_id', 'No disponible')
+    # Extract fields from new webhook structure
+    if 'client_payload' in webhook_data:
+        fields = webhook_data['client_payload']['fields']
+        ticket_id = webhook_data.get('ticket_id', 'No disponible')
+    else:
+        # Fallback to old structure
+        form_data = webhook_data.get('data', webhook_data)
+        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
+        ticket_id = form_data.get('ticket_id', 'No disponible')
+    
+    fecha_creacion = datetime.now().strftime('%d/%m/%Y')
     
     # Common fields
-    empresa = get_field_value(fields, 'question_59JjXb')
-    nif_cif = get_field_value(fields, 'question_d0OabN')
-    email = get_field_value(fields, 'question_oRq2oM')
+    empresa = get_field_value_by_name(fields, 'Empresa')
+    nif_cif = get_field_value_by_name(fields, 'NIF/CIF/VAT')
+    email = get_field_value_by_name(fields, 'Email')
     
     if brand == 'Conway':
         row_data = {
@@ -278,14 +293,14 @@ def prepare_row_data(form_data, brand):
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
             'Email': email,
-            'Modelo': get_field_value(fields, 'question_Dpjkqp'),
-            'Talla': get_field_value(fields, 'question_lOxea6'),
-            'Año de fabricación': get_field_value(fields, 'question_RoAMWP'),
-            'Estado de la bicicleta': get_field_value(fields, 'question_oRqe9M'),
-            'Descripción del problema': get_field_value(fields, 'question_GpZ9ez'),
-            'Solución y/o reparación propuesta y presupuesto': get_field_value(fields, 'question_OX64QA'),
-            'Factura de compra': get_field_value(fields, 'question_VPKQpl'),
-            'Factura de venta': get_field_value(fields, 'question_P971R0')
+            'Modelo': get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)'),
+            'Talla': get_field_value_by_name(fields, 'Conway - Talla'),
+            'Año de fabricación': get_field_value_by_name(fields, 'Conway - Año de fabricación'),
+            'Estado de la bicicleta': get_field_value_by_name(fields, 'Conway - Estado de la bicicleta'),
+            'Descripción del problema': get_field_value_by_name(fields, 'Conway - Descripción del problema'),
+            'Solución y/o reparación propuesta y presupuesto': get_field_value_by_name(fields, 'Conway - Solución o reparación propuesta y presupuesto aproximado'),
+            'Factura de compra': get_field_value_by_name(fields, 'Conway - Adjunta la factura de compra a Hartje'),
+            'Factura de venta': get_field_value_by_name(fields, 'Conway - Adjunta la factura de venta')
         }
     elif brand == 'Cycplus':
         row_data = {
@@ -295,12 +310,12 @@ def prepare_row_data(form_data, brand):
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
             'Email': email,
-            'Modelo': get_field_value(fields, 'question_2Apa7p'),
-            'Estado del producto': get_field_value(fields, 'question_xDAMvG'),
-            'Descripción del problema': get_field_value(fields, 'question_RoAMkp'),
+            'Modelo': get_field_value_by_name(fields, 'Cycplus - Modelo'),
+            'Estado del producto': get_field_value_by_name(fields, 'Cycplus - Estado del Producto'),
+            'Descripción del problema': get_field_value_by_name(fields, 'Cycplus - Descripción del problema'),
             'Solución y/o reparación propuesta y presupuesto': '',  # Not applicable for Cycplus
-            'Factura de compra': get_field_value(fields, 'question_GpZlqz'),
-            'Factura de venta': get_field_value(fields, 'question_oRqevX')
+            'Factura de compra': get_field_value_by_name(fields, 'Adjunta la factura de compra'),
+            'Factura de venta': get_field_value_by_name(fields, 'Cycplus - Adjunta la factura de venta')
         }
     elif brand == 'Dare':
         row_data = {
@@ -310,13 +325,13 @@ def prepare_row_data(form_data, brand):
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
             'Email': email,
-            'Modelo': get_field_value(fields, 'question_GpZ952'),
-            'Talla': get_field_value(fields, 'question_OX64kp'),
-            'Estado de la bicicleta': get_field_value(fields, 'question_P971rd'),
-            'Descripción del problema': get_field_value(fields, 'question_El2d6q'),
-            'Solución y/o reparación propuesta y presupuesto': get_field_value(fields, 'question_rOeaY5'),
-            'Factura de compra': get_field_value(fields, 'question_OX6GbA'),
-            'Factura de venta': get_field_value(fields, 'question_47MJOB')
+            'Modelo': get_field_value_by_name(fields, 'Dare - Modelo'),
+            'Talla': get_field_value_by_name(fields, 'Dare - Talla'),
+            'Estado de la bicicleta': get_field_value_by_name(fields, 'Dare - Estado de la bicicleta'),
+            'Descripción del problema': get_field_value_by_name(fields, 'Dare - Descripción del problema'),
+            'Solución y/o reparación propuesta y presupuesto': get_field_value_by_name(fields, 'Dare - Solución o reparación propuesta y presupuesto aproximado'),
+            'Factura de compra': get_field_value_by_name(fields, 'Dare - Adjunta la factura de compra'),
+            'Factura de venta': get_field_value_by_name(fields, 'Dare - Adjunta la factura de venta')
         }
     elif brand == 'Kogel':
         # Kogel structure similar to others - add if needed
@@ -340,17 +355,17 @@ def prepare_row_data(form_data, brand):
 def update_excel_file(webhook_data):
     """Main function to update Excel file in Dropbox"""
     try:
-        form_data = webhook_data['data']
+        # Extract fields from new webhook structure
+        if 'client_payload' in webhook_data:
+            fields = webhook_data['client_payload']['fields']
+        else:
+            # Fallback to old structure
+            form_data = webhook_data.get('data', webhook_data)
+            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
         
-        # Get brand from form
-        brand = None
-        for field in form_data['fields']:
-            if field['key'] == 'question_YG10j0':
-                if field['value'] and isinstance(field['value'], list):
-                    brand = get_brand_display_name(field['value'][0], field.get('options', []))
-                break
+        brand = get_field_value_by_name(fields, 'Marca del Producto')
         
-        if not brand:
+        if not brand or brand == 'No especificado':
             raise Exception("Brand not found in form data")
         
         # Get Dropbox credentials
@@ -372,7 +387,7 @@ def update_excel_file(webhook_data):
         df = pd.read_excel(excel_file, sheet_name=brand)
         
         # Prepare new row data
-        new_row = prepare_row_data(form_data, brand)
+        new_row = prepare_row_data(webhook_data, brand)
         
         # Add new row to dataframe
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
