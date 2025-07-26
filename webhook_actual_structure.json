@@ -1,0 +1,93 @@
+{
+  "eventType": "form-submission",
+  "fields": {
+    "Empresa": "AURA SYSTEMS SCP",
+    "NIF/CIF/VAT": "1234567A",
+    "Email": "cabagu35@gmail.com",
+    "Marca del Producto": [
+      "Conway"
+    ],
+    "Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)": "Xyron ST",
+    "Conway - Talla": [
+      "M"
+    ],
+    "Conway - Año de fabricación": [
+      "2025"
+    ],
+    "Conway - Estado de la bicicleta": [
+      "Usada"
+    ],
+    "Conway - Descripción del problema": "Funciona perfectamente",
+    "Conway - Solución o reparación propuesta y presupuesto aproximado": "Funciona perfectamente",
+    "Conway - Adjunta la factura de compra a Hartje": [
+      {
+        "id": "gLKbED",
+        "name": "ANÁLISIS TÉCNICO ChessPy.pdf",
+        "url": "https://storage.tally.so/private/ANALISIS-TECNICO-ChessPy.pdf?id=gLKbED&accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImdMS2JFRCIsImZvcm1JZCI6IndMTEs1MiIsImlhdCI6MTc1MzU0MjI0NH0.aTVh0IqFgFe65shToyUwL4iYmDyUYPZ87zUGryw11CY&signature=ab6ef2199b1109eb1d1841d8b49b205fe974d21b9518231974ba9e5e2da812fe",
+        "mimeType": "application/pdf",
+        "size": 430011
+      }
+    ],
+    "Conway - Adjunta la factura de venta": [
+      {
+        "id": "8G7NXz",
+        "name": "ANÁLISIS TÉCNICO ChessPy.pdf",
+        "url": "https://storage.tally.so/private/ANALISIS-TECNICO-ChessPy.pdf?id=8G7NXz&accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhHN05YeiIsImZvcm1JZCI6IndMTEs1MiIsImlhdCI6MTc1MzU0MjI0NH0.rk5owaSjqCQFYs009_t31qWpoaGkX9Zcgc_ro2BTqqw&signature=ee12e05006837d390b474f19f154bbd064b969b9986fb6da2621271fc2b21681",
+        "mimeType": "application/pdf",
+        "size": 430011
+      }
+    ],
+    "Cycplus - Descripción del problema": null,
+    "Adjunta la factura de compra": null,
+    "Cycplus - Adjunta la factura de venta": null,
+    "Dare - Descripción del problema": null,
+    "Dare - Solución o reparación propuesta y presupuesto aproximado": null,
+    "Dare - Adjunta la factura de compra": null,
+    "Dare - Adjunta la factura de venta": null
+  },
+  "fieldsById": {
+    "question_59JjXb": "AURA SYSTEMS SCP",
+    "question_d0OabN": "1234567A",
+    "question_oRq2oM": "cabagu35@gmail.com",
+    "question_YG10j0": [
+      "Conway"
+    ],
+    "question_Dpjkqp": "Xyron ST",
+    "question_lOxea6": [
+      "M"
+    ],
+    "question_RoAMWP": [
+      "2025"
+    ],
+    "question_oRqe9M": [
+      "Usada"
+    ],
+    "question_GpZ9ez": "Funciona perfectamente",
+    "question_OX64QA": "Funciona perfectamente",
+    "question_VPKQpl": [
+      {
+        "id": "gLKbED",
+        "name": "ANÁLISIS TÉCNICO ChessPy.pdf",
+        "url": "https://storage.tally.so/private/ANALISIS-TECNICO-ChessPy.pdf?id=gLKbED&accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImdMS2JFRCIsImZvcm1JZCI6IndMTEs1MiIsImlhdCI6MTc1MzU0MjI0NH0.aTVh0IqFgFe65shToyUwL4iYmDyUYPZ87zUGryw11CY&signature=ab6ef2199b1109eb1d1841d8b49b205fe974d21b9518231974ba9e5e2da812fe",
+        "mimeType": "application/pdf",
+        "size": 430011
+      }
+    ],
+    "question_P971R0": [
+      {
+        "id": "8G7NXz",
+        "name": "ANÁLISIS TÉCNICO ChessPy.pdf",
+        "url": "https://storage.tally.so/private/ANALISIS-TECNICO-ChessPy.pdf?id=8G7NXz&accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhHN05YeiIsImZvcm1JZCI6IndMTEs1MiIsImlhdCI6MTc1MzU0MjI0NH0.rk5owaSjqCQFYs009_t31qWpoaGkX9Zcgc_ro2BTqqw&signature=ee12e05006837d390b474f19f154bbd064b969b9986fb6da2621271fc2b21681",
+        "mimeType": "application/pdf",
+        "size": 430011
+      }
+    ],
+    "question_RoAMkp": null,
+    "question_GpZlqz": null,
+    "question_oRqevX": null,
+    "question_El2d6q": null,
+    "question_rOeaY5": null,
+    "question_OX6GbA": null,
+    "question_47MJOB": null
+  }
+}

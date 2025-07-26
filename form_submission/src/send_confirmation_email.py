@@ -42,9 +42,13 @@ def get_field_value_by_name(fields, field_name):
         return str(value) if value else 'No especificado'
 
 def create_confirmation_email(webhook_data):
-    # Extract fields from new webhook structure
-    if 'client_payload' in webhook_data:
-        # New GitHub webhook structure
+    # Extract fields from webhook structure
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        # GitHub action webhook structure (direct client_payload)
+        fields = webhook_data['fields']
+        ticket_id = webhook_data.get('ticket_id', 'No disponible')
+    elif 'client_payload' in webhook_data:
+        # GitHub webhook structure with client_payload
         fields = webhook_data['client_payload']['fields']
         ticket_id = webhook_data.get('ticket_id', 'No disponible')
     else:

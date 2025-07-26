@@ -31,9 +31,13 @@ def process_warranty_form(webhook_data):
     
     logger.info("Starting warranty form processing")
     
-    # Handle both old and new webhook structures
-    if 'client_payload' in webhook_data:
-        # New GitHub webhook structure
+    # Handle different webhook structures
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        # GitHub action webhook structure (direct client_payload)
+        logger.info(f"Event Type: {webhook_data.get('eventType', 'N/A')}")
+        event_type = webhook_data.get('eventType', 'form-submission')
+    elif 'client_payload' in webhook_data:
+        # GitHub webhook structure with client_payload
         logger.info(f"Event Type: {webhook_data.get('event_type', 'N/A')}")
         event_type = webhook_data.get('event_type', 'form-submission')
     else:
@@ -116,7 +120,12 @@ def validate_webhook_structure(webhook_data):
     """
     logger.info(f"Input webhook keys: {list(webhook_data.keys())}")
     
-    if 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        logger.info("Detected GitHub action webhook structure (direct client_payload)")
+        fields = webhook_data['fields']
+        logger.info(f"Found {len(fields)} fields in payload")
+        return True
+    elif 'client_payload' in webhook_data and 'fields' in webhook_data['client_payload']:
         logger.info("Detected GitHub webhook structure with client_payload")
         fields = webhook_data['client_payload']['fields']
         logger.info(f"Found {len(fields)} fields in payload")

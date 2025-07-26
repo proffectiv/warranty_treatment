@@ -108,8 +108,11 @@ def calculate_duplicate_probability(webhook_data, existing_df):
     Calculate the probability that this form submission is a duplicate
     Returns probability (0.0-1.0) and the most similar existing record
     """
-    # Extract fields from new webhook structure
-    if 'client_payload' in webhook_data:
+    # Extract fields from webhook structure
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        # GitHub action webhook structure (direct client_payload)
+        fields = webhook_data['fields']
+    elif 'client_payload' in webhook_data:
         fields = webhook_data['client_payload']['fields']
     else:
         # Fallback to old structure
@@ -219,8 +222,11 @@ def check_for_duplicates(webhook_data):
     Returns (is_duplicate, probability, details)
     """
     try:
-        # Extract fields from new webhook structure
-        if 'client_payload' in webhook_data:
+        # Extract fields from webhook structure
+        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+            # GitHub action webhook structure (direct client_payload)
+            fields = webhook_data['fields']
+        elif 'client_payload' in webhook_data:
             fields = webhook_data['client_payload']['fields']
         else:
             # Fallback to old structure
@@ -268,8 +274,12 @@ def check_for_duplicates(webhook_data):
 
 def prepare_row_data(webhook_data, brand):
     """Prepare row data based on brand"""
-    # Extract fields from new webhook structure
-    if 'client_payload' in webhook_data:
+    # Extract fields from webhook structure
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        # GitHub action webhook structure (direct client_payload)
+        fields = webhook_data['fields']
+        ticket_id = webhook_data.get('ticket_id', 'No disponible')
+    elif 'client_payload' in webhook_data:
         fields = webhook_data['client_payload']['fields']
         ticket_id = webhook_data.get('ticket_id', 'No disponible')
     else:
@@ -355,8 +365,11 @@ def prepare_row_data(webhook_data, brand):
 def update_excel_file(webhook_data):
     """Main function to update Excel file in Dropbox"""
     try:
-        # Extract fields from new webhook structure
-        if 'client_payload' in webhook_data:
+        # Extract fields from webhook structure
+        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+            # GitHub action webhook structure (direct client_payload)
+            fields = webhook_data['fields']
+        elif 'client_payload' in webhook_data:
             fields = webhook_data['client_payload']['fields']
         else:
             # Fallback to old structure
