@@ -18,22 +18,19 @@ load_dotenv()
 logger = setup_secure_logging('notification_email')
 
 def get_brand_display_name(brand_id, options):
+    """Get display text from dropdown options based on ID"""
     for option in options:
         if option['id'] == brand_id:
             return option['text']
-    return 'Desconocida'
+    return 'No especificado'
 
 def get_field_value(fields, key):
     for field in fields:
         if field['key'] == key:
             if field['type'] == 'DROPDOWN' and field['value']:
                 if isinstance(field['value'], list) and len(field['value']) > 0:
-                    # Only use get_brand_display_name for brand field (question_YG10j0)
-                    if key == 'question_YG10j0':
-                        return get_brand_display_name(field['value'][0], field.get('options', []))
-                    else:
-                        # For other dropdown fields, return the value directly
-                        return field['value'][0]
+                    # For all dropdown fields, get the display text from options
+                    return get_brand_display_name(field['value'][0], field.get('options', []))
                 return field['value']
             return field['value'] if field['value'] else 'No especificado'
     return 'No especificado'
@@ -76,6 +73,7 @@ def create_notification_email(form_data):
         talla = 'No aplicable'
         año = 'No aplicable'
         solucion = 'No aplicable'
+        
     elif marca == 'Dare':
         modelo = get_field_value(fields, 'question_GpZ952')
         talla = get_field_value(fields, 'question_OX64kp')

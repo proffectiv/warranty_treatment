@@ -18,16 +18,18 @@ load_dotenv()
 logger = setup_secure_logging('confirmation_email')
 
 def get_brand_display_name(brand_id, options):
+    """Get display text from dropdown options based on ID"""
     for option in options:
         if option['id'] == brand_id:
             return option['text']
-    return 'Desconocida'
+    return 'No especificado'
 
 def get_field_value(fields, key):
     for field in fields:
         if field['key'] == key:
             if field['type'] == 'DROPDOWN' and field['value']:
                 if isinstance(field['value'], list) and len(field['value']) > 0:
+                    # For all dropdown fields, get the display text from options
                     return get_brand_display_name(field['value'][0], field.get('options', []))
                 return field['value']
             return field['value'] if field['value'] else 'No especificado'
@@ -41,6 +43,13 @@ def create_confirmation_email(form_data):
     nif_cif = get_field_value(fields, 'question_d0OabN')
     email = get_field_value(fields, 'question_oRq2oM')
     marca = get_field_value(fields, 'question_YG10j0')
+    
+    # Initialize all variables with defaults to prevent 'desconocido' returns
+    modelo = 'No especificado'
+    talla = 'No aplicable'
+    año = 'No aplicable' 
+    estado = 'No especificado'
+    problema = 'No especificado'
     
     # Brand-specific fields
     if marca == 'Conway':
@@ -61,6 +70,16 @@ def create_confirmation_email(form_data):
         año = get_field_value(fields, 'question_VPKQNE')
         estado = get_field_value(fields, 'question_P971rd')
         problema = get_field_value(fields, 'question_El2d6q')
+    elif marca == 'Kogel':
+        # Kogel specific handling if needed
+        modelo = 'No especificado'
+        talla = 'No aplicable'
+        año = 'No aplicable'
+        estado = 'No especificado'
+        problema = 'No especificado'
+    else:
+        # Handle unknown brands - use defaults already set above
+        logger.warning(f"Unknown brand: {marca}. Using default values.")
     
     fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
     

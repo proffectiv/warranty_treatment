@@ -72,11 +72,11 @@ def upload_excel_to_dropbox(access_token, file_path, excel_data):
         raise Exception(f"Failed to upload file: {response.text}")
 
 def get_brand_display_name(brand_id, options):
-    """Get brand display name from options"""
+    """Get display text from dropdown options based on ID"""
     for option in options:
         if option['id'] == brand_id:
             return option['text']
-    return 'Desconocida'
+    return 'No especificado'
 
 def get_field_value(fields, key):
     """Extract field value from form fields"""
@@ -84,6 +84,7 @@ def get_field_value(fields, key):
         if field['key'] == key:
             if field['type'] == 'DROPDOWN' and field['value']:
                 if isinstance(field['value'], list) and len(field['value']) > 0:
+                    # For all dropdown fields, get the display text from options
                     return get_brand_display_name(field['value'][0], field.get('options', []))
                 return field['value']
             elif field['type'] == 'FILE_UPLOAD' and field['value']:
