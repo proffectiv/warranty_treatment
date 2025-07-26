@@ -2,11 +2,21 @@ import os
 import json
 import requests
 import pandas as pd
-from datetime import datetime
+import sys
+from datetime import datetime, timedelta
 from io import BytesIO
 from dotenv import load_dotenv
+from difflib import SequenceMatcher
+
+# Import logging filter from root directory
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from log_filter import setup_secure_logging
 
 load_dotenv()
+
+# Set up secure logging
+logger = setup_secure_logging('excel_dropbox')
 
 def get_dropbox_access_token():
     """Get access token from refresh token"""
@@ -82,6 +92,171 @@ def get_field_value(fields, key):
                 return 'Archivo adjunto'
             return field['value'] if field['value'] else ''
     return ''
+
+def text_similarity(text1, text2):
+    """Calculate similarity between two texts using SequenceMatcher"""
+    if not text1 and not text2:
+        return 1.0
+    if not text1 or not text2:
+        return 0.0
+    return SequenceMatcher(None, str(text1).lower(), str(text2).lower()).ratio()
+
+def calculate_duplicate_probability(form_data, existing_df):
+    """
+    Calculate the probability that this form submission is a duplicate
+    Returns probability (0.0-1.0) and the most similar existing record
+    """
+    fields = form_data['fields']
+    current_nif = get_field_value(fields, 'question_d0OabN').strip().upper()
+    current_email = get_field_value(fields, 'question_oRq2oM').strip().lower()
+    current_brand = get_field_value(fields, 'question_YG10j0')
+    current_time = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00'))
+    
+    # Get current submission details based on brand
+    if current_brand == 'Conway':
+        current_model = get_field_value(fields, 'question_Dpjkqp')
+        current_size = get_field_value(fields, 'question_lOxea6')
+    elif current_brand == 'Cycplus':
+        current_model = get_field_value(fields, 'question_2Apa7p')
+        current_size = 'N/A'  # No size for Cycplus
+    elif current_brand == 'Dare':
+        current_model = get_field_value(fields, 'question_GpZ952')
+        current_size = get_field_value(fields, 'question_OX64kp')
+    elif current_brand == 'Kogel':
+        current_model = ''
+        current_size = 'N/A'  # No size for Kogel
+    else:
+        return 0.0, None
+    
+    # Filter existing records for same NIF
+    if existing_df.empty:
+        return 0.0, None
+    
+    # Look for records with same NIF
+    same_nif_records = existing_df[existing_df['NIF/CIF/VAT'].str.upper().str.strip() == current_nif]
+    
+    if same_nif_records.empty:
+        return 0.0, None
+    
+    max_probability = 0.0
+    most_similar_record = None
+    
+    for _, record in same_nif_records.iterrows():
+        probability_factors = []
+        
+        # 1. Email similarity (20% weight)
+        email_similarity = text_similarity(current_email, str(record.get('Email', '')).strip().lower())
+        probability_factors.append(('email', email_similarity, 0.20))
+        
+        # 2. Brand exact match (25% weight) - brands are in separate sheets, so this is always 1.0
+        brand_match = 1.0  # Since we're checking within the same brand sheet
+        probability_factors.append(('brand', brand_match, 0.25))
+        
+        # 3. Model similarity (20% weight)
+        model_similarity = text_similarity(current_model, str(record.get('Modelo', '')))
+        probability_factors.append(('model', model_similarity, 0.20))
+        
+        # 4. Size similarity (10% weight for Conway/Dare, 0% for others)
+        if current_brand in ['Conway', 'Dare']:
+            size_similarity = text_similarity(current_size, str(record.get('Talla', '')))
+            probability_factors.append(('size', size_similarity, 0.10))
+        
+        # 5. Time proximity (25% weight)
+        try:
+            record_time = datetime.strptime(str(record.get('Fecha de creación', '')), '%d/%m/%Y')
+            # Add current time to make comparison fair (assume submitted at similar time)
+            record_time = record_time.replace(hour=current_time.hour, minute=current_time.minute)
+            time_diff = abs((current_time - record_time).total_seconds())
+            
+            # Calculate time similarity (closer = higher probability)
+            # 1 hour = 0.9, 6 hours = 0.7, 24 hours = 0.3, 48 hours = 0.1
+            if time_diff <= 3600:  # 1 hour
+                time_similarity = 0.95
+            elif time_diff <= 21600:  # 6 hours
+                time_similarity = 0.80
+            elif time_diff <= 86400:  # 24 hours
+                time_similarity = 0.40
+            elif time_diff <= 172800:  # 48 hours
+                time_similarity = 0.15
+            else:
+                time_similarity = 0.05
+                
+        except:
+            time_similarity = 0.0
+            
+        probability_factors.append(('time', time_similarity, 0.25))
+        
+        # Calculate weighted probability
+        total_probability = sum(score * weight for _, score, weight in probability_factors)
+        
+        # Bonus for very high individual scores
+        high_individual_scores = [score for _, score, _ in probability_factors if score > 0.9]
+        if len(high_individual_scores) >= 3:
+            total_probability += 0.1  # 10% bonus
+        
+        if total_probability > max_probability:
+            max_probability = total_probability
+            most_similar_record = {
+                'record': record,
+                'factors': probability_factors,
+                'total_score': total_probability
+            }
+    
+    return min(max_probability, 1.0), most_similar_record
+
+def check_for_duplicates(webhook_data):
+    """
+    Check if the current submission is likely a duplicate
+    Returns (is_duplicate, probability, details)
+    """
+    try:
+        form_data = webhook_data['data']
+        
+        # Get brand to know which sheet to check
+        fields = form_data['fields']
+        brand = None
+        for field in fields:
+            if field['key'] == 'question_YG10j0':
+                if field['value'] and isinstance(field['value'], list):
+                    brand = get_brand_display_name(field['value'][0], field.get('options', []))
+                break
+        
+        if not brand:
+            return False, 0.0, "Could not determine brand"
+        
+        # Download and check Excel file
+        access_token = get_dropbox_access_token()
+        folder_path = os.getenv('DROPBOX_FOLDER_PATH')
+        file_path = f"{folder_path}/GARANTIAS_PROFFECTIV.xlsx"
+        
+        try:
+            excel_file = download_excel_from_dropbox(access_token, file_path)
+            df = pd.read_excel(excel_file, sheet_name=brand)
+        except Exception as e:
+            # If file doesn't exist or sheet doesn't exist, no duplicates possible
+            logger.warning(f"Could not read Excel file for duplicate check: {str(e)}")
+            return False, 0.0, f"Could not access existing records: {str(e)}"
+        
+        # Calculate duplicate probability
+        probability, similar_record = calculate_duplicate_probability(form_data, df)
+        
+        # Define threshold for considering it a duplicate
+        DUPLICATE_THRESHOLD = 0.75  # 75% similarity threshold
+        
+        is_duplicate = probability >= DUPLICATE_THRESHOLD
+        
+        details = {
+            'probability': probability,
+            'threshold': DUPLICATE_THRESHOLD,
+            'brand': brand,
+            'similar_record': similar_record
+        }
+        
+        return is_duplicate, probability, details
+        
+    except Exception as e:
+        logger.error(f"Error during duplicate check: {str(e)}")
+        return False, 0.0, f"Error during duplicate check: {str(e)}"
 
 def prepare_row_data(form_data, brand):
     """Prepare row data based on brand"""
@@ -219,13 +394,13 @@ def update_excel_file(webhook_data):
         # Upload updated file back to Dropbox
         upload_result = upload_excel_to_dropbox(access_token, file_path, output.getvalue())
         
-        print(f"Excel file updated successfully. New row added to {brand} sheet.")
-        print(f"File uploaded to Dropbox: {upload_result.get('path_display', file_path)}")
+        logger.info(f"Excel file updated successfully. New row added to {brand} sheet.")
+        logger.info(f"File uploaded to Dropbox: {upload_result.get('path_display', file_path)}")
         
         return True
         
     except Exception as e:
-        print(f"Error updating Excel file: {str(e)}")
+        logger.error(f"Error updating Excel file: {str(e)}")
         return False
 
 if __name__ == "__main__":

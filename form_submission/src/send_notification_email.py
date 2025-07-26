@@ -1,12 +1,21 @@
 import os
 import json
 import smtplib
+import sys
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from dotenv import load_dotenv
 
+# Import logging filter from root directory
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from log_filter import setup_secure_logging
+
 load_dotenv()
+
+# Set up secure logging
+logger = setup_secure_logging('notification_email')
 
 def get_brand_display_name(brand_id, options):
     for option in options:
@@ -64,9 +73,18 @@ def create_notification_email(form_data):
     
     fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
     response_id = form_data['responseId']
+
+    style = """
+    <style>
+        body {
+            color: #000000;
+        }
+    </style>
+    """
     
     html_content = f"""
     <html>
+    {style}
     <body>
         <h2>🚨 Nueva Solicitud de Garantía Recibida</h2>
         
@@ -170,11 +188,11 @@ def send_notification_email(webhook_data):
             server.login(smtp_username, smtp_password)
             server.send_message(msg)
             
-        print(f"Notification email sent successfully to {notification_email}")
+        logger.info(f"Notification email sent successfully to admin")
         return True
         
     except Exception as e:
-        print(f"Error sending notification email: {str(e)}")
+        logger.error(f"Error sending notification email: {str(e)}")
         return False
 
 if __name__ == "__main__":

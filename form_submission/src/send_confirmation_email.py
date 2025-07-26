@@ -1,12 +1,21 @@
 import os
 import json
 import smtplib
+import sys
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from dotenv import load_dotenv
 
+# Import logging filter from root directory
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from log_filter import setup_secure_logging
+
 load_dotenv()
+
+# Set up secure logging
+logger = setup_secure_logging('confirmation_email')
 
 def get_brand_display_name(brand_id, options):
     for option in options:
@@ -131,11 +140,11 @@ def send_confirmation_email(webhook_data):
             server.login(smtp_username, smtp_password)
             server.send_message(msg)
             
-        print(f"Confirmation email sent successfully to {client_email}")
+        logger.info(f"Confirmation email sent successfully to client")
         return True
         
     except Exception as e:
-        print(f"Error sending confirmation email: {str(e)}")
+        logger.error(f"Error sending confirmation email: {str(e)}")
         return False
 
 if __name__ == "__main__":

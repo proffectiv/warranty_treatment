@@ -1,4 +1,4 @@
-name: Warranty Form Automation
+name: Form Submission Automation
 
 on:
   repository_dispatch:
@@ -20,12 +20,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pandas requests python-dotenv smtplib-ssl xlsxwriter openpyxl
+        pip install -r requirements.txt
     
     - name: Create webhook data file
       run: |
-        echo '${{ toJson(github.event.client_payload) }}' > webhook_data.json
-        cat webhook_data.json
+        echo '${{ toJson(github.event.client_payload) }}' > form_submission/src/webhook_data.json
+        cat form_submission/src/webhook_data.json
     
     - name: Set up environment variables
       run: |
@@ -42,24 +42,15 @@ jobs:
         echo "HOLDED_API_KEY=${{ secrets.HOLDED_API_KEY }}" >> $GITHUB_ENV
         echo "HOLDED_BASE_URL=${{ secrets.HOLDED_BASE_URL }}" >> $GITHUB_ENV
     
-    - name: Send confirmation email to client
+    - name: Run form submission automation
+      working-directory: form_submission/src
       run: |
-        python send_confirmation_email.py webhook_data.json
-      continue-on-error: true
-    
-    - name: Update Excel file in Dropbox
-      run: |
-        python update_excel_dropbox.py webhook_data.json
-      continue-on-error: true
-    
-    - name: Send notification email
-      run: |
-        python send_notification_email.py webhook_data.json
+        python main.py webhook_data.json
       continue-on-error: true
     
     - name: Log completion
       run: |
-        echo "Warranty automation completed for form response"
+        echo "Form submission automation completed"
         echo "Event ID: ${{ github.event.client_payload.eventId }}"
         echo "Response ID: ${{ github.event.client_payload.data.responseId }}"
         echo "Form: ${{ github.event.client_payload.data.formName }}"
