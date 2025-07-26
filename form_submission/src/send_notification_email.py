@@ -42,6 +42,16 @@ def create_notification_email(form_data):
     email = get_field_value(fields, 'question_oRq2oM')
     marca = get_field_value(fields, 'question_YG10j0')
     
+    # Initialize all variables with defaults
+    modelo = 'No especificado'
+    talla = 'No aplicable'
+    año = 'No aplicable'
+    estado = 'No especificado'
+    problema = 'No especificado'
+    solucion = 'No aplicable'
+    factura_compra = 'No'
+    factura_venta = 'No'
+    
     # Brand-specific fields
     if marca == 'Conway':
         modelo = get_field_value(fields, 'question_Dpjkqp')
@@ -70,6 +80,9 @@ def create_notification_email(form_data):
         solucion = get_field_value(fields, 'question_rOeaY5')
         factura_compra = 'Sí' if get_field_value(fields, 'question_OX6GbA') != 'No especificado' else 'No'
         factura_venta = 'Sí' if get_field_value(fields, 'question_47MJOB') != 'No especificado' else 'No'
+    else:
+        # Handle unknown brands or missing brand info - use defaults already set above
+        logger.warning(f"Unknown brand: {marca}. Using default values.")
     
     fecha_creacion = datetime.fromisoformat(form_data['createdAt'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
     response_id = form_data['responseId']
