@@ -16,7 +16,7 @@ from log_filter import setup_secure_logging
 
 from send_confirmation_email import send_confirmation_email
 from send_notification_email import send_notification_email
-from update_excel_dropbox import update_excel_file, check_for_duplicates
+from update_excel_dropbox import update_excel_file
 
 # Initialize logger
 logger = setup_secure_logging('main')
@@ -38,25 +38,6 @@ def process_warranty_form(webhook_data):
     if webhook_data.get('eventType') not in valid_event_types:
         logger.error(f"Invalid event type. Expected one of: {valid_event_types}")
         return False
-    
-    # Check for duplicates before processing
-    logger.info("Checking for duplicate submissions")
-    is_duplicate, probability, details = check_for_duplicates(webhook_data)
-    
-    if is_duplicate:
-        logger.warning(f"DUPLICATE DETECTED! Probability: {probability:.2f}%")
-        logger.info(f"Threshold: {details.get('threshold', 75.0):.2f}%")
-        logger.info(f"Brand: {details.get('brand', 'N/A')}")
-        
-        if 'probability_factors' in details:
-            logger.info("Most similar record factors:")
-            for factor_name, factor_value, weight in details['probability_factors']:
-                logger.info(f"Factor {factor_name}: {factor_value:.1f}% (weight: {weight*100:.1f}%)")
-        
-        logger.warning("Automation STOPPED - Duplicate submission detected")
-        return False
-    else:
-        logger.info(f"No duplicates found (probability: {probability:.2f}%)")
     
     # Generate unique ticket ID
     ticket_id = str(uuid.uuid4())
