@@ -162,15 +162,17 @@ def create_notification_email(webhook_data):
     <html>
     {style}
     <body>
-        <h2>🚨 Nueva Solicitud de Garantía Recibida</h2>
+        <h2>Nueva Solicitud de Garantía Recibida</h2>
+
+        <h3><a href="https://www.dropbox.com/home/GARANTIAS?preview=GARANTIAS_PROFFECTIV.xlsx">Acceder al documento de gestión de garantías</a></h3>
         
         <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #1976D2; margin: 20px 0;">
-            <h3>🎫 Ticket de Garantía</h3>
+            <h3>Ticket de Garantía</h3>
             <p><strong style="font-size: 18px; color: #1976D2;">Ticket ID: {ticket_id}</strong></p>
         </div>
         
         <div style="background-color: #e8f4fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
-            <h3>📋 Información General</h3>
+            <h3>Información General</h3>
             <ul>
                 <li><strong>Fecha y Hora:</strong> {fecha_creacion}</li>
                 <li><strong>Empresa:</strong> {empresa}</li>
@@ -180,7 +182,7 @@ def create_notification_email(webhook_data):
         </div>
         
         <div style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 20px 0;">
-            <h3>🛠️ Información del Producto</h3>
+            <h3>Información del Producto</h3>
             <ul>
                 <li><strong>Marca:</strong> {marca}</li>
                 <li><strong>Modelo:</strong> {modelo}</li>
@@ -191,13 +193,13 @@ def create_notification_email(webhook_data):
         </div>
         
         <div style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0;">
-            <h3>⚠️ Problema Reportado</h3>
-            <p><strong>{problema}</strong></p>
-            {"<h4>💡 Solución Propuesta:</h4><p>" + str(solucion) + "</p>" if solucion != 'No aplicable' and solucion != 'No especificado' else ""}
+            <h3>Problema Reportado</h3>
+            <p>{problema}</p>
+            {"<h3>Solución Propuesta:</h3><p>" + str(solucion) + "</p>" if solucion != 'No aplicable' and solucion != 'No especificado' else ""}
         </div>
         
         <div style="background-color: #f3e5f5; padding: 15px; border-left: 4px solid #9c27b0; margin: 20px 0;">
-            <h3>📄 Documentación</h3>
+            <h3>Documentación</h3>
             <ul>
                 <li><strong>Factura de compra:</strong> {factura_compra}</li>
                 <li><strong>Factura de venta:</strong> {factura_venta}</li>
@@ -205,24 +207,18 @@ def create_notification_email(webhook_data):
         </div>
         
         <div style="background-color: #e8f5e8; padding: 15px; border-left: 4px solid #4caf50; margin: 20px 0;">
-            <h3>✅ Acciones Realizadas</h3>
+            <h3>Acciones Realizadas</h3>
             <ul>
-                <li>✓ Email de confirmación enviado al cliente</li>
-                <li>✓ Registro añadido al archivo de Excel en Dropbox</li>
                 <li>✓ Notificación de nuevo ticket generada</li>
+                <li>✓ Email de confirmación enviado al cliente</li>
+                {"<li>✓ Solicitud de garantía enviada a Conway" if marca == 'Conway' else ""}
+                <li>✓ Registro añadido al archivo de Excel en Dropbox</li>   
             </ul>
         </div>
         
         <hr>
-        <p><strong>👉 Próximos pasos:</strong></p>
-        <ol>
-            <li>Revisar la solicitud de garantía</li>
-            <li>Evaluar la documentación adjunta</li>
-            <li>Contactar con el cliente para dar seguimiento</li>
-            <li>Actualizar el estado en el sistema de seguimiento</li>
-        </ol>
         
-        <p>Este mensaje ha sido generado automáticamente por el sistema de gestión de garantías.</p>
+        <p>Este mensaje ha sido generado automáticamente por el sistema de gestión de garantías de PROFFECTIV.</p>
     </body>
     </html>
     """
