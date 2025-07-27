@@ -2,8 +2,13 @@ import os
 import json
 import smtplib
 import sys
+import requests
+import tempfile
+import mimetypes
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -40,6 +45,43 @@ def get_field_value_by_name(fields, field_name):
         return value if value.strip() else 'No especificado'
     else:
         return str(value) if value else 'No especificado'
+
+def get_file_urls_from_field(fields, field_name):
+    """Extract file URLs from a field if it contains file uploads"""
+    value = fields.get(field_name)
+    urls = []
+    
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict) and 'url' in item:
+                urls.append({
+                    'url': item['url'],
+                    'name': item.get('name', 'file')
+                })
+    
+    return urls
+
+def download_file_from_url(url, filename):
+    """Download file from URL and save to temporary file"""
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        # Create temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        
+        # Write content to temporary file
+        for chunk in response.iter_content(chunk_size=8192):
+            temp_file.write(chunk)
+        
+        temp_file.close()
+        
+        logger.info(f"Downloaded file: {filename} from {url}")
+        return temp_file.name
+        
+    except Exception as e:
+        logger.error(f"Failed to download file {filename} from {url}: {str(e)}")
+        return None
 
 def create_notification_email(webhook_data):
     # Extract fields from webhook structure
@@ -188,6 +230,7 @@ def create_notification_email(webhook_data):
     return html_content
 
 def send_notification_email(webhook_data):
+    downloaded_files = []
     try:
         html_content = create_notification_email(webhook_data)
         
@@ -231,13 +274,83 @@ def send_notification_email(webhook_data):
         
         # Create message
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"🔔 Nueva Garantía: {empresa} - Ticket: {ticket_id}"
+        msg['Subject'] = f"Nueva Solicitud de Garantía: {empresa} - Ticket: {ticket_id}"
         msg['From'] = smtp_username
         msg['To'] = notification_email
         
         # Add HTML content
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
+        
+        # Get fields for file attachments
+        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+            fields = webhook_data['fields']
+        elif 'client_payload' in webhook_data:
+            fields = webhook_data['client_payload']['fields']
+        else:
+            form_data = webhook_data.get('data', webhook_data)
+            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
+        
+        # Get brand to determine which file fields to check
+        brand = get_field_value_by_name(fields, 'Marca del Producto')
+        
+        # Download and attach files based on brand
+        try:
+            # Define file fields based on brand
+            file_fields = []
+            if brand == 'Conway':
+                file_fields = [
+                    'Conway - Adjunta la factura de compra a Hartje',
+                    'Conway - Adjunta la factura de venta'
+                ]
+            elif brand == 'Dare':
+                file_fields = [
+                    'Dare - Adjunta la factura de compra',
+                    'Dare - Adjunta la factura de venta'
+                ]
+            elif brand == 'Cycplus':
+                file_fields = [
+                    'Adjunta la factura de compra',
+                    'Cycplus - Adjunta la factura de venta'
+                ]
+            else:
+                # Generic file fields for other brands
+                file_fields = [
+                    'Adjunta la factura de compra',
+                    'Adjunta la factura de venta'
+                ]
+            
+            # Process each file field
+            for field_name in file_fields:
+                file_urls = get_file_urls_from_field(fields, field_name)
+                for file_info in file_urls:
+                    temp_file_path = download_file_from_url(file_info['url'], file_info['name'])
+                    if temp_file_path:
+                        downloaded_files.append(temp_file_path)
+                        
+                        # Attach file to email
+                        with open(temp_file_path, 'rb') as attachment:
+                            # Guess the content type based on the file's name
+                            ctype, encoding = mimetypes.guess_type(temp_file_path)
+                            if ctype is None or encoding is not None:
+                                ctype = 'application/octet-stream'
+                            
+                            maintype, subtype = ctype.split('/', 1)
+                            
+                            part = MIMEBase(maintype, subtype)
+                            part.set_payload(attachment.read())
+                            encoders.encode_base64(part)
+                            
+                            part.add_header(
+                                'Content-Disposition',
+                                f'attachment; filename= {file_info["name"]}'
+                            )
+                            msg.attach(part)
+                            
+                            logger.info(f"Attached file: {file_info['name']} from field: {field_name}")
+        
+        except Exception as e:
+            logger.warning(f"Error processing file attachments: {str(e)}")
         
         # Send email
         logger.info("Attempting to send notification email...")
@@ -261,6 +374,14 @@ def send_notification_email(webhook_data):
     except Exception as e:
         logger.error(f"Error sending notification email: {str(e)}")
         return False
+    finally:
+        # Clean up downloaded temporary files
+        for temp_file_path in downloaded_files:
+            try:
+                os.unlink(temp_file_path)
+                logger.info(f"Cleaned up temporary file: {temp_file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temporary file {temp_file_path}: {str(e)}")
 
 if __name__ == "__main__":
     # Test with sample data

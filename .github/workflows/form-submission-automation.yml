@@ -35,6 +35,7 @@ jobs:
         echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}" >> $GITHUB_ENV
         echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> $GITHUB_ENV
         echo "NOTIFICATION_EMAIL=${{ secrets.NOTIFICATION_EMAIL }}" >> $GITHUB_ENV
+        echo "CONWAY_NOTIFICATION_EMAIL=${{ secrets.CONWAY_NOTIFICATION_EMAIL }}" >> $GITHUB_ENV
         echo "DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}" >> $GITHUB_ENV
         echo "DROPBOX_APP_SECRET=${{ secrets.DROPBOX_APP_SECRET }}" >> $GITHUB_ENV
         echo "DROPBOX_REFRESH_TOKEN=${{ secrets.DROPBOX_REFRESH_TOKEN }}" >> $GITHUB_ENV
