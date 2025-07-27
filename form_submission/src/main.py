@@ -15,6 +15,7 @@ from log_filter import setup_secure_logging
 
 from send_confirmation_email import send_confirmation_email
 from send_notification_email import send_notification_email
+from send_conway_notification_email import send_conway_notification_email
 from update_excel_dropbox import update_excel_file
 
 # Initialize logger
@@ -58,10 +59,48 @@ def process_warranty_form(webhook_data):
     # Add ticket ID to webhook data for other functions to use
     webhook_data['ticket_id'] = ticket_id
     
+    # Extract brand for Conway-specific logic using the same logic as other email functions
+    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
+        fields = webhook_data['fields']
+    elif 'client_payload' in webhook_data:
+        fields = webhook_data['client_payload']['fields']
+    else:
+        form_data = webhook_data.get('data', webhook_data)
+        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
+    
+    # Get brand from fields using the same function as email modules
+    def get_field_value_by_name(fields, field_name):
+        """Get field value using human-readable field name from new webhook structure"""
+        value = fields.get(field_name)
+        
+        if value is None:
+            return 'Not specified'
+        
+        # Handle different value types
+        if isinstance(value, list):
+            if len(value) > 0:
+                # For dropdown selections, return the first value
+                if isinstance(value[0], dict):
+                    # File upload - return file info
+                    return f"Attached file: {value[0].get('name', 'file')}"
+                else:
+                    # Dropdown selection - return the selected value
+                    return str(value[0])
+            else:
+                return 'Not specified'
+        elif isinstance(value, str):
+            return value if value.strip() else 'Not specified'
+        else:
+            return str(value) if value else 'Not specified'
+    
+    brand = get_field_value_by_name(fields, 'Marca del Producto')
+    logger.info(f"Processing warranty for brand: {brand}")
+    
     results = {
         'confirmation_email': False,
         'excel_update': False,
-        'notification_email': False
+        'notification_email': False,
+        'conway_notification': False
     }
     
     # Step 1: Send confirmation email to client
@@ -97,6 +136,21 @@ def process_warranty_form(webhook_data):
     except Exception as e:
         logger.error(f"Error sending notification email: {str(e)}")
     
+    # Step 4: Send Conway-specific notification email if brand is Conway
+    if brand == 'Conway':
+        logger.info("Sending Conway-specific notification email")
+        try:
+            results['conway_notification'] = send_conway_notification_email(webhook_data)
+            if results['conway_notification']:
+                logger.info("Conway notification email sent successfully")
+            else:
+                logger.error("Failed to send Conway notification email")
+        except Exception as e:
+            logger.error(f"Error sending Conway notification email: {str(e)}")
+    else:
+        logger.info(f"Brand is '{brand}', skipping Conway notification email")
+        results['conway_notification'] = True  # Mark as successful since it's not needed
+    
     # Summary
     successful_tasks = sum(results.values())
     total_tasks = len(results)
@@ -105,6 +159,8 @@ def process_warranty_form(webhook_data):
     logger.info(f"Confirmation Email: {'SUCCESS' if results['confirmation_email'] else 'FAILED'}")
     logger.info(f"Excel Update: {'SUCCESS' if results['excel_update'] else 'FAILED'}")
     logger.info(f"Notification Email: {'SUCCESS' if results['notification_email'] else 'FAILED'}")
+    if brand == 'Conway':
+        logger.info(f"Conway Notification Email: {'SUCCESS' if results['conway_notification'] else 'FAILED'}")
     logger.info(f"{successful_tasks}/{total_tasks} tasks completed successfully")
     
     if successful_tasks == total_tasks:
