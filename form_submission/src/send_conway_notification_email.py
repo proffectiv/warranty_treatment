@@ -188,8 +188,15 @@ def create_conway_notification_email(webhook_data):
         
         <div style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0;">
             <h3>Reported Problem</h3>
+            <h4>Spanish:</h4>
+            <p>{problema_raw}</p>
+            <h4>English:</h4>
             <p>{problema}</p>
-            {"<h3>Proposed Solution:</h3><p>" + str(solucion) + "</p>" if solucion != 'Not specified' else ""}
+            <h3>Proposed Solution:</h3>
+            <h4>Spanish:</h4>
+            <p>{solucion_raw if solucion_raw != 'Not specified' else ''}</p>
+            <h4>English:</h4>
+            <p>{solucion if solucion != 'Not specified' else ''}</p>
         </div>
         
         <div style="background-color: #f3e5f5; padding: 15px; border-left: 4px solid #9c27b0; margin: 20px 0;">
