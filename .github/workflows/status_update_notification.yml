@@ -1,0 +1,71 @@
+name: Status Update Notification
+
+on:
+  workflow_run:
+    workflows: ["*"]
+    types:
+      - completed
+  status:
+  check_suite:
+    types:
+      - completed
+
+jobs:
+  notify-status-update:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' || github.event_name == 'status' || github.event_name == 'check_suite'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get workflow status
+        id: workflow-status
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "status=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+            echo "workflow_name=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+            echo "repository=${{ github.event.workflow_run.repository.full_name }}" >> $GITHUB_OUTPUT
+            echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "status" ]; then
+            echo "status=${{ github.event.state }}" >> $GITHUB_OUTPUT
+            echo "context=${{ github.event.context }}" >> $GITHUB_OUTPUT
+            echo "description=${{ github.event.description }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "check_suite" ]; then
+            echo "status=${{ github.event.check_suite.conclusion }}" >> $GITHUB_OUTPUT
+            echo "app_name=${{ github.event.check_suite.app.name }}" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Send notification
+        if: steps.workflow-status.outputs.status != 'skipped'
+        run: |
+          echo "Status Update Notification"
+          echo "========================"
+          
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "Workflow: ${{ steps.workflow-status.outputs.workflow_name }}"
+            echo "Status: ${{ steps.workflow-status.outputs.status }}"
+            echo "Repository: ${{ steps.workflow-status.outputs.repository }}"
+            echo "Run ID: ${{ steps.workflow-status.outputs.run_id }}"
+          elif [ "${{ github.event_name }}" = "status" ]; then
+            echo "Context: ${{ steps.workflow-status.outputs.context }}"
+            echo "Status: ${{ steps.workflow-status.outputs.status }}"
+            echo "Description: ${{ steps.workflow-status.outputs.description }}"
+          elif [ "${{ github.event_name }}" = "check_suite" ]; then
+            echo "App: ${{ steps.workflow-status.outputs.app_name }}"
+            echo "Status: ${{ steps.workflow-status.outputs.status }}"
+          fi
+          
+          echo "Event: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Add your notification logic here
+          # Examples:
+          # - Send Slack notification
+          # - Send email
+          # - Send Discord webhook
+          # - Update external status page
+          
+          echo "Notification sent successfully!"
