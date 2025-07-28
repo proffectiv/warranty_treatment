@@ -164,7 +164,7 @@ def create_notification_email(webhook_data):
     <body>
         <h2>Nueva Solicitud de Garantía Recibida</h2>
 
-        <h3><a href="https://www.dropbox.com/home/GARANTIAS?preview=GARANTIAS_PROFFECTIV.xlsx">Acceder al documento de gestión de garantías</a></h3>
+        <h3><a href="https://www.dropbox.com/home/GARANTIAS">Acceder al documento de gestión de garantías</a></h3>
         
         <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #1976D2; margin: 20px 0;">
             <h3>Ticket de Garantía</h3>
