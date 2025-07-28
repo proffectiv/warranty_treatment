@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from log_filter import setup_secure_logging
+from warranty_form_data import WarrantyFormData
 
 load_dotenv()
 
@@ -46,44 +47,7 @@ def translate_text(text, target_lang='en'):
         logger.warning(f"Translation failed: {str(e)}, returning original text")
         return text
 
-def get_field_value_by_name(fields, field_name):
-    """Get field value using human-readable field name from new webhook structure"""
-    value = fields.get(field_name)
-    
-    if value is None:
-        return 'Not specified'
-    
-    # Handle different value types
-    if isinstance(value, list):
-        if len(value) > 0:
-            # For dropdown selections, return the first value
-            if isinstance(value[0], dict):
-                # File upload - return file info
-                return f"Attached file: {value[0].get('name', 'file')}"
-            else:
-                # Dropdown selection - return the selected value
-                return str(value[0])
-        else:
-            return 'Not specified'
-    elif isinstance(value, str):
-        return value if value.strip() else 'Not specified'
-    else:
-        return str(value) if value else 'Not specified'
-
-def get_file_urls_from_field(fields, field_name):
-    """Extract file URLs from a field if it contains file uploads"""
-    value = fields.get(field_name)
-    urls = []
-    
-    if isinstance(value, list):
-        for item in value:
-            if isinstance(item, dict) and 'url' in item:
-                urls.append({
-                    'url': item['url'],
-                    'name': item.get('name', 'file')
-                })
-    
-    return urls
+# Old field parsing functions removed - now using WarrantyFormData methods
 
 def download_file_from_url(url, filename):
     """Download file from URL and save to temporary file"""
@@ -107,44 +71,35 @@ def download_file_from_url(url, filename):
         logger.error(f"Failed to download file {filename} from {url}: {str(e)}")
         return None
 
-def create_conway_notification_email(webhook_data):
-    # Extract fields from webhook structure
-    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-        # GitHub action webhook structure (direct client_payload)
-        fields = webhook_data['fields']
-        ticket_id = webhook_data.get('ticket_id', 'Not available')
-    elif 'client_payload' in webhook_data:
-        # GitHub webhook structure with client_payload
-        fields = webhook_data['client_payload']['fields']
-        ticket_id = webhook_data.get('ticket_id', 'Not available')
-    else:
-        # Fallback to old structure if needed
-        form_data = webhook_data.get('data', webhook_data)
-        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        ticket_id = form_data.get('ticket_id', 'Not available')
+def create_conway_notification_email(form_data: WarrantyFormData):
+    """Create Conway notification email content using WarrantyFormData object"""
     
-    # Get basic info using human-readable field names
-    empresa = get_field_value_by_name(fields, 'Empresa')
-    nif_cif = get_field_value_by_name(fields, 'NIF/CIF/VAT')
-    email = get_field_value_by_name(fields, 'Email')
-    marca = get_field_value_by_name(fields, 'Marca del Producto')
+    # Get data from form_data object
+    data = form_data.to_dict()
+    fecha_creacion = data['fecha_creacion']
+    ticket_id = form_data.ticket_id
     
-    # Initialize Conway-specific variables
-    modelo = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
-    talla = get_field_value_by_name(fields, 'Conway - Talla')
-    año = get_field_value_by_name(fields, 'Conway - Año de fabricación')
-    estado = 'New' if get_field_value_by_name(fields, 'Conway - Estado de la bicicleta') == 'Nueva' else 'Used'
-    problema_raw = get_field_value_by_name(fields, 'Conway - Descripción del problema')
-    solucion_raw = get_field_value_by_name(fields, 'Conway - Solución o reparación propuesta y presupuesto aproximado')
-    factura_compra = 'Yes' if get_field_value_by_name(fields, 'Conway - Adjunta la factura de compra a Hartje') != 'Not specified' else 'No'
-    factura_venta = 'Yes' if get_field_value_by_name(fields, 'Conway - Adjunta la factura de venta') != 'Not specified' else 'No'
+    # Conway-specific data extraction
+    empresa = form_data.empresa
+    nif_cif = form_data.nif_cif
+    email = form_data.email
+    marca = form_data.brand
+    modelo = form_data.modelo
+    talla = form_data.talla
+    año = form_data.año
+    estado = 'New' if form_data.estado.lower() == 'nuevo' else 'Used'
     
-    # Translate the problem and solution fields to English
-    problema = translate_text(problema_raw)
-    solucion = translate_text(solucion_raw)
+    # Keep original Spanish text and translated English text
+    problema_raw = form_data.problema
+    solucion_raw = form_data.solucion
+    problema = translate_text(form_data.problema)
+    solucion = translate_text(form_data.solucion)
     
-    # Get creation date
-    fecha_creacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    # Determine if invoices are attached
+    factura_compra = 'Yes' if len(form_data.factura_compra) > 0 else 'No'
+    factura_venta = 'Yes' if len(form_data.factura_venta) > 0 else 'No'
+    fotos_problema = 'Yes' if len(form_data.fotos_problema) > 0 else 'No'
+    videos_problema = 'Yes' if len(form_data.videos_problema) > 0 else 'No'
 
     style = """
     <style>
@@ -204,6 +159,8 @@ def create_conway_notification_email(webhook_data):
             <ul>
                 <li><strong>Purchase invoice:</strong> {factura_compra}</li>
                 <li><strong>Sales invoice:</strong> {factura_venta}</li>
+                <li><strong>Images:</strong> {fotos_problema}</li>
+                <li><strong>Videos:</strong> {videos_problema}</li>
             </ul>
         </div>
 
@@ -216,10 +173,10 @@ def create_conway_notification_email(webhook_data):
     
     return html_content
 
-def send_conway_notification_email(webhook_data):
+def send_conway_notification_email(form_data: WarrantyFormData):
     downloaded_files = []
     try:
-        html_content = create_conway_notification_email(webhook_data)
+        html_content = create_conway_notification_email(form_data)
         
         # Email configuration
         smtp_host = os.getenv('SMTP_HOST')
@@ -242,25 +199,9 @@ def send_conway_notification_email(webhook_data):
             }.items() if not v]
             raise Exception(f"Missing email configuration: {missing}")
         
-        # Get empresa and fields from webhook data
-        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-            fields = webhook_data['fields']
-            empresa = get_field_value_by_name(fields, 'Empresa')
-            ticket_id = webhook_data.get('ticket_id', 'N/A')
-        elif 'client_payload' in webhook_data:
-            fields = webhook_data['client_payload']['fields']
-            empresa = get_field_value_by_name(fields, 'Empresa')
-            ticket_id = webhook_data.get('ticket_id', 'N/A')
-        else:
-            # Fallback for old structure
-            form_data = webhook_data.get('data', webhook_data)
-            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-            empresa = 'N/A'
-            for field in form_data.get('fields', []):
-                if field.get('key') == 'question_59JjXb':
-                    empresa = field.get('value', 'N/A')
-                    break
-            ticket_id = form_data.get('ticket_id', 'N/A')
+        # Get empresa and ticket_id from form_data
+        empresa = form_data.empresa
+        ticket_id = form_data.ticket_id
         
         # Create message
         msg = MIMEMultipart()
@@ -272,15 +213,21 @@ def send_conway_notification_email(webhook_data):
         html_part = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(html_part)
         
-        # Download and attach files from Conway fields
-        file_fields = [
-            'Conway - Adjunta la factura de compra a Hartje',
-            'Conway - Adjunta la factura de venta'
-        ]
-        
-        for field_name in file_fields:
-            file_urls = get_file_urls_from_field(fields, field_name)
-            for file_info in file_urls:
+        # Download and attach files from form_data (invoices, images, videos)
+        try:
+            # Get all files from form_data (invoices, images, videos)
+            all_files = []
+            for file_info in form_data.factura_compra:
+                all_files.append({'url': file_info.url, 'name': file_info.name})
+            for file_info in form_data.factura_venta:
+                all_files.append({'url': file_info.url, 'name': file_info.name})
+            for file_info in form_data.fotos_problema:
+                all_files.append({'url': file_info.url, 'name': file_info.name})
+            for file_info in form_data.videos_problema:
+                all_files.append({'url': file_info.url, 'name': file_info.name})
+            
+            # Process each file
+            for file_info in all_files:
                 temp_file_path = download_file_from_url(file_info['url'], file_info['name'])
                 if temp_file_path:
                     downloaded_files.append(temp_file_path)
@@ -304,7 +251,9 @@ def send_conway_notification_email(webhook_data):
                         )
                         msg.attach(part)
                         
-                        logger.info(f"Attached file: {file_info['name']}")
+                        logger.info(f"Attached file: {file_info['name']}")                        
+        except Exception as e:
+            logger.warning(f"Error processing file attachments: {str(e)}")
         
         # Send email
         logger.info("Attempting to send Conway notification email...")
@@ -343,4 +292,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         with open(sys.argv[1], 'r') as f:
             webhook_data = json.load(f)
-        send_conway_notification_email(webhook_data)
+        form_data = WarrantyFormData(webhook_data, "test-ticket-123")
+        send_conway_notification_email(form_data)

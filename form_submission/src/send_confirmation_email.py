@@ -11,100 +11,20 @@ from dotenv import load_dotenv
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from log_filter import setup_secure_logging
+from warranty_form_data import WarrantyFormData
 
 load_dotenv()
 
 # Set up secure logging
 logger = setup_secure_logging('confirmation_email')
 
-def get_field_value_by_name(fields, field_name):
-    """Get field value using human-readable field name from new webhook structure"""
-    value = fields.get(field_name)
+def create_confirmation_email(form_data: WarrantyFormData):
+    """Create confirmation email content using WarrantyFormData object"""
     
-    if value is None:
-        return 'No especificado'
+    # Get all data from the form_data object
+    data = form_data.to_dict()
     
-    # Handle different value types
-    if isinstance(value, list):
-        if len(value) > 0:
-            # For dropdown selections, return the first value
-            if isinstance(value[0], dict):
-                # File upload - return file info
-                return f"Archivo adjunto: {value[0].get('name', 'archivo')}"
-            else:
-                # Dropdown selection - return the selected value
-                return str(value[0])
-        else:
-            return 'No especificado'
-    elif isinstance(value, str):
-        return value if value.strip() else 'No especificado'
-    else:
-        return str(value) if value else 'No especificado'
-
-def create_confirmation_email(webhook_data):
-    # Extract fields from webhook structure
-    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-        # GitHub action webhook structure (direct client_payload)
-        fields = webhook_data['fields']
-        ticket_id = webhook_data.get('ticket_id', 'No disponible')
-    elif 'client_payload' in webhook_data:
-        # GitHub webhook structure with client_payload
-        fields = webhook_data['client_payload']['fields']
-        ticket_id = webhook_data.get('ticket_id', 'No disponible')
-    else:
-        # Fallback to old structure if needed
-        form_data = webhook_data.get('data', webhook_data)
-        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        ticket_id = form_data.get('ticket_id', 'No disponible')
-    
-    # Get basic info using human-readable field names
-    empresa = get_field_value_by_name(fields, 'Empresa')
-    nif_cif = get_field_value_by_name(fields, 'NIF/CIF/VAT')
-    email = get_field_value_by_name(fields, 'Email')
-    marca = get_field_value_by_name(fields, 'Marca del Producto')
-    
-    # Initialize all variables with defaults to prevent 'desconocido' returns
-    modelo = 'No especificado'
-    talla = 'No aplicable'
-    año = 'No aplicable' 
-    estado = 'No especificado'
-    problema = 'No especificado'
-    solucion = 'No especificado'
-
-    # Brand-specific fields using human-readable field names
-    if marca == 'Conway':
-        modelo = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
-        talla = get_field_value_by_name(fields, 'Conway - Talla')
-        año = get_field_value_by_name(fields, 'Conway - Año de fabricación')
-        estado = get_field_value_by_name(fields, 'Conway - Estado de la bicicleta')
-        problema = get_field_value_by_name(fields, 'Conway - Descripción del problema')
-        solucion = get_field_value_by_name(fields, 'Conway - Solución propuesta')
-    elif marca == 'Cycplus':
-        modelo = get_field_value_by_name(fields, 'Cycplus - Modelo')
-        estado = get_field_value_by_name(fields, 'Cycplus - Estado del Producto')
-        problema = get_field_value_by_name(fields, 'Cycplus - Descripción del problema')
-        talla = 'No aplicable'
-        año = 'No aplicable'
-    elif marca == 'Dare':
-        modelo = get_field_value_by_name(fields, 'Dare - Modelo')
-        talla = get_field_value_by_name(fields, 'Dare - Talla')
-        año = get_field_value_by_name(fields, 'Dare - Año de fabricación')
-        estado = get_field_value_by_name(fields, 'Dare - Estado de la bicicleta')
-        problema = get_field_value_by_name(fields, 'Dare - Descripción del problema')
-        solucion = get_field_value_by_name(fields, 'Dare - Solución propuesta')
-    elif marca == 'Kogel':
-        # Kogel specific handling if needed
-        modelo = 'No especificado'
-        talla = 'No aplicable'
-        año = 'No aplicable'
-        estado = 'No especificado'
-        problema = 'No especificado'
-        solucion = 'No especificado'
-    else:
-        # Handle unknown brands - use defaults already set above
-        logger.warning(f"Unknown brand: {marca}. Using default values.")
-    
-    fecha_creacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    fecha_creacion = data['fecha_creacion']
     
     html_content = f"""
     <html>
@@ -113,7 +33,7 @@ def create_confirmation_email(webhook_data):
         
         <div style="background-color: #e8f4fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
             <h3>Número de Ticket</h3>
-            <p><strong style="font-size: 18px; color: #1976D2;">{ticket_id}</strong></p>
+            <p><strong style="font-size: 18px; color: #1976D2;">{form_data.ticket_id}</strong></p>
             <p><em>Guarde este número para futuras consultas sobre su incidencia.</em></p>
         </div>
         
@@ -122,21 +42,21 @@ def create_confirmation_email(webhook_data):
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <h3>Datos de la Empresa</h3>
             <ul>
-                <li><strong>Empresa:</strong> {empresa}</li>
-                <li><strong>NIF/CIF/VAT:</strong> {nif_cif}</li>
-                <li><strong>Email:</strong> {email}</li>
+                <li><strong>Empresa:</strong> {form_data.empresa}</li>
+                <li><strong>NIF/CIF/VAT:</strong> {form_data.nif_cif}</li>
+                <li><strong>Email:</strong> {form_data.email}</li>
                 <li><strong>Fecha de solicitud:</strong> {fecha_creacion}</li>
             </ul>
             
             <h3>Información del Producto</h3>
             <ul>
-                <li><strong>Marca:</strong> {marca}</li>
-                <li><strong>Modelo:</strong> {modelo}</li>
-                {"<li><strong>Talla:</strong> " + str(talla) + "</li>" if talla != 'No aplicable' else ""}
-                {"<li><strong>Año de fabricación:</strong> " + str(año) + "</li>" if año != 'No aplicable' else ""}
-                <li><strong>Estado:</strong> {estado}</li>
-                <li><strong>Descripción del problema:</strong> {problema}</li>
-                <li><strong>Solución propuesta:</strong> {solucion}</li>
+                <li><strong>Marca:</strong> {form_data.brand}</li>
+                <li><strong>Modelo:</strong> {form_data.modelo}</li>
+                {"<li><strong>Talla:</strong> " + form_data.talla + "</li>" if form_data.talla != 'No aplicable' else ""}
+                {"<li><strong>Año de fabricación:</strong> " + form_data.año + "</li>" if form_data.año != 'No aplicable' else ""}
+                <li><strong>Estado:</strong> {form_data.estado}</li>
+                <li><strong>Descripción del problema:</strong> {form_data.problema}</li>
+                {"<li><strong>Solución propuesta:</strong> " + form_data.solucion + "</li>" if form_data.solucion != 'No aplicable' else ""}
             </ul>
         </div>
         
@@ -153,11 +73,12 @@ def create_confirmation_email(webhook_data):
     </html>
     """
     
-    return html_content, email, empresa
+    return html_content, form_data.email, form_data.empresa
 
-def send_confirmation_email(webhook_data):
+def send_confirmation_email(form_data: WarrantyFormData):
+    """Send confirmation email to client using WarrantyFormData object"""
     try:
-        html_content, client_email, empresa = create_confirmation_email(webhook_data)
+        html_content, client_email, empresa = create_confirmation_email(form_data)
         
         # Email configuration
         smtp_host = os.getenv('SMTP_HOST')
@@ -193,4 +114,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         with open(sys.argv[1], 'r') as f:
             webhook_data = json.load(f)
-        send_confirmation_email(webhook_data)
+        form_data = WarrantyFormData(webhook_data, "test-ticket-123")
+        send_confirmation_email(form_data)

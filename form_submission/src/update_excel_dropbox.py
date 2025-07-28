@@ -12,6 +12,7 @@ from difflib import SequenceMatcher
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from log_filter import setup_secure_logging
+from warranty_form_data import WarrantyFormData
 
 load_dotenv()
 
@@ -71,29 +72,7 @@ def upload_excel_to_dropbox(access_token, file_path, excel_data):
     else:
         raise Exception(f"Failed to upload file: {response.text}")
 
-def get_field_value_by_name(fields, field_name):
-    """Get field value using human-readable field name from new webhook structure"""
-    value = fields.get(field_name)
-    
-    if value is None:
-        return ''
-    
-    # Handle different value types
-    if isinstance(value, list):
-        if len(value) > 0:
-            # For dropdown selections, return the first value
-            if isinstance(value[0], dict):
-                # File upload - return URL
-                return value[0].get('url', '')
-            else:
-                # Dropdown selection - return the selected value
-                return str(value[0])
-        else:
-            return ''
-    elif isinstance(value, str):
-        return value if value.strip() else ''
-    else:
-        return str(value) if value else ''
+# Remove the old field parsing function since we now use WarrantyFormData
 
 def text_similarity(text1, text2):
     """Calculate similarity between two texts using SequenceMatcher"""
@@ -103,42 +82,18 @@ def text_similarity(text1, text2):
         return 0.0
     return SequenceMatcher(None, str(text1).lower(), str(text2).lower()).ratio()
 
-def calculate_duplicate_probability(webhook_data, existing_df):
+def calculate_duplicate_probability(form_data: WarrantyFormData, existing_df):
     """
     Calculate the probability that this form submission is a duplicate
     Returns probability (0.0-1.0) and the most similar existing record
     """
-    # Extract fields from webhook structure
-    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-        # GitHub action webhook structure (direct client_payload)
-        fields = webhook_data['fields']
-    elif 'client_payload' in webhook_data:
-        fields = webhook_data['client_payload']['fields']
-    else:
-        # Fallback to old structure
-        form_data = webhook_data.get('data', webhook_data)
-        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
     
-    current_nif = get_field_value_by_name(fields, 'NIF/CIF/VAT').strip().upper()
-    current_email = get_field_value_by_name(fields, 'Email').strip().lower()
-    current_brand = get_field_value_by_name(fields, 'Marca del Producto')
+    current_nif = form_data.nif_cif.strip().upper()
+    current_email = form_data.email.strip().lower()
+    current_brand = form_data.brand
     current_time = datetime.now()
-    
-    # Get current submission details based on brand
-    if current_brand == 'Conway':
-        current_model = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
-        current_size = get_field_value_by_name(fields, 'Conway - Talla')
-    elif current_brand == 'Cycplus':
-        current_model = get_field_value_by_name(fields, 'Cycplus - Modelo')
-        current_size = 'N/A'  # No size for Cycplus
-    elif current_brand == 'Dare':
-        current_model = get_field_value_by_name(fields, 'Dare - Modelo')
-        current_size = get_field_value_by_name(fields, 'Dare - Talla')
-    elif current_brand == 'Kogel':
-        current_model = ''
-        current_size = 'N/A'  # No size for Kogel
-    else:
-        return 0.0, None
+    current_model = form_data.modelo
+    current_size = form_data.talla if form_data.talla != 'No aplicable' else 'N/A'
     
     # Filter existing records for same NIF
     if existing_df.empty:
@@ -169,7 +124,7 @@ def calculate_duplicate_probability(webhook_data, existing_df):
         probability_factors.append(('model', model_similarity, 0.20))
         
         # 4. Size similarity (10% weight for Conway/Dare, 0% for others)
-        if current_brand in ['Conway', 'Dare']:
+        if form_data.is_conway() or form_data.is_dare():
             size_similarity = text_similarity(current_size, str(record.get('Talla', '')))
             probability_factors.append(('size', size_similarity, 0.10))
         
@@ -216,24 +171,13 @@ def calculate_duplicate_probability(webhook_data, existing_df):
     
     return min(max_probability, 1.0), most_similar_record
 
-def check_for_duplicates(webhook_data):
+def check_for_duplicates(form_data: WarrantyFormData):
     """
     Check if the current submission is likely a duplicate
     Returns (is_duplicate, probability, details)
     """
     try:
-        # Extract fields from webhook structure
-        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-            # GitHub action webhook structure (direct client_payload)
-            fields = webhook_data['fields']
-        elif 'client_payload' in webhook_data:
-            fields = webhook_data['client_payload']['fields']
-        else:
-            # Fallback to old structure
-            form_data = webhook_data.get('data', webhook_data)
-            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        
-        brand = get_field_value_by_name(fields, 'Marca del Producto')
+        brand = form_data.brand
         
         if not brand or brand == 'No especificado':
             return False, 0.0, "Could not determine brand"
@@ -252,7 +196,7 @@ def check_for_duplicates(webhook_data):
             return False, 0.0, f"Could not access existing records: {str(e)}"
         
         # Calculate duplicate probability
-        probability, similar_record = calculate_duplicate_probability(webhook_data, df)
+        probability, similar_record = calculate_duplicate_probability(form_data, df)
         
         # Define threshold for considering it a duplicate
         DUPLICATE_THRESHOLD = 0.75  # 75% similarity threshold
@@ -272,111 +216,12 @@ def check_for_duplicates(webhook_data):
         logger.error(f"Error during duplicate check: {str(e)}")
         return False, 0.0, f"Error during duplicate check: {str(e)}"
 
-def prepare_row_data(webhook_data, brand):
-    """Prepare row data based on brand"""
-    # Extract fields from webhook structure
-    if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-        # GitHub action webhook structure (direct client_payload)
-        fields = webhook_data['fields']
-        ticket_id = webhook_data.get('ticket_id', 'No disponible')
-    elif 'client_payload' in webhook_data:
-        fields = webhook_data['client_payload']['fields']
-        ticket_id = webhook_data.get('ticket_id', 'No disponible')
-    else:
-        # Fallback to old structure
-        form_data = webhook_data.get('data', webhook_data)
-        fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        ticket_id = form_data.get('ticket_id', 'No disponible')
-    
-    fecha_creacion = datetime.now().strftime('%d/%m/%Y')
-    
-    # Common fields
-    empresa = get_field_value_by_name(fields, 'Empresa')
-    nif_cif = get_field_value_by_name(fields, 'NIF/CIF/VAT')
-    email = get_field_value_by_name(fields, 'Email')
-    
-    if brand == 'Conway':
-        row_data = {
-            'Ticket ID': ticket_id,
-            'Estado': 'Recibida',
-            'Fecha de creación': fecha_creacion,
-            'Empresa': empresa,
-            'NIF/CIF/VAT': nif_cif,
-            'Email': email,
-            'Modelo': get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)'),
-            'Talla': get_field_value_by_name(fields, 'Conway - Talla'),
-            'Año de fabricación': get_field_value_by_name(fields, 'Conway - Año de fabricación'),
-            'Estado de la bicicleta': get_field_value_by_name(fields, 'Conway - Estado de la bicicleta'),
-            'Descripción del problema': get_field_value_by_name(fields, 'Conway - Descripción del problema'),
-            'Solución y/o reparación propuesta y presupuesto': get_field_value_by_name(fields, 'Conway - Solución o reparación propuesta y presupuesto aproximado'),
-            'Factura de compra': get_field_value_by_name(fields, 'Conway - Adjunta la factura de compra a Hartje'),
-            'Factura de venta': get_field_value_by_name(fields, 'Conway - Adjunta la factura de venta')
-        }
-    elif brand == 'Cycplus':
-        row_data = {
-            'Ticket ID': ticket_id,
-            'Estado': 'Recibida',
-            'Fecha de creación': fecha_creacion,
-            'Empresa': empresa,
-            'NIF/CIF/VAT': nif_cif,
-            'Email': email,
-            'Modelo': get_field_value_by_name(fields, 'Cycplus - Modelo'),
-            'Estado del producto': get_field_value_by_name(fields, 'Cycplus - Estado del Producto'),
-            'Descripción del problema': get_field_value_by_name(fields, 'Cycplus - Descripción del problema'),
-            'Solución y/o reparación propuesta y presupuesto': '',  # Not applicable for Cycplus
-            'Factura de compra': get_field_value_by_name(fields, 'Adjunta la factura de compra'),
-            'Factura de venta': get_field_value_by_name(fields, 'Cycplus - Adjunta la factura de venta')
-        }
-    elif brand == 'Dare':
-        row_data = {
-            'Ticket ID': ticket_id,
-            'Estado': 'Recibida',
-            'Fecha de creación': fecha_creacion,
-            'Empresa': empresa,
-            'NIF/CIF/VAT': nif_cif,
-            'Email': email,
-            'Modelo': get_field_value_by_name(fields, 'Dare - Modelo'),
-            'Talla': get_field_value_by_name(fields, 'Dare - Talla'),
-            'Estado de la bicicleta': get_field_value_by_name(fields, 'Dare - Estado de la bicicleta'),
-            'Descripción del problema': get_field_value_by_name(fields, 'Dare - Descripción del problema'),
-            'Solución y/o reparación propuesta y presupuesto': get_field_value_by_name(fields, 'Dare - Solución o reparación propuesta y presupuesto aproximado'),
-            'Factura de compra': get_field_value_by_name(fields, 'Dare - Adjunta la factura de compra'),
-            'Factura de venta': get_field_value_by_name(fields, 'Dare - Adjunta la factura de venta')
-        }
-    elif brand == 'Kogel':
-        # Kogel structure similar to others - add if needed
-        row_data = {
-            'Ticket ID': ticket_id,
-            'Estado': 'Recibida',
-            'Fecha de creación': fecha_creacion,
-            'Empresa': empresa,
-            'NIF/CIF/VAT': nif_cif,
-            'Email': email,
-            'Modelo': '',
-            'Estado del producto': '',
-            'Descripción del problema': '',
-            'Solución y/o reparación propuesta y presupuesto': '',
-            'Factura de compra': '',
-            'Factura de venta': ''
-        }
-    
-    return row_data
+# Remove the old prepare_row_data function since we now use WarrantyFormData.to_excel_row()
 
-def update_excel_file(webhook_data):
-    """Main function to update Excel file in Dropbox"""
+def update_excel_file(form_data: WarrantyFormData):
+    """Main function to update Excel file in Dropbox using WarrantyFormData object"""
     try:
-        # Extract fields from webhook structure
-        if 'fields' in webhook_data and 'fieldsById' in webhook_data:
-            # GitHub action webhook structure (direct client_payload)
-            fields = webhook_data['fields']
-        elif 'client_payload' in webhook_data:
-            fields = webhook_data['client_payload']['fields']
-        else:
-            # Fallback to old structure
-            form_data = webhook_data.get('data', webhook_data)
-            fields = {field['label']: field['value'] for field in form_data.get('fields', [])}
-        
-        brand = get_field_value_by_name(fields, 'Marca del Producto')
+        brand = form_data.brand
         
         if not brand or brand == 'No especificado':
             raise Exception("Brand not found in form data")
@@ -399,8 +244,8 @@ def update_excel_file(webhook_data):
         # Load the specific brand sheet
         df = pd.read_excel(excel_file, sheet_name=brand)
         
-        # Prepare new row data
-        new_row = prepare_row_data(webhook_data, brand)
+        # Prepare new row data using form_data
+        new_row = form_data.to_excel_row(brand)
         
         # Add new row to dataframe
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
@@ -438,4 +283,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         with open(sys.argv[1], 'r') as f:
             webhook_data = json.load(f)
-        update_excel_file(webhook_data)
+        form_data = WarrantyFormData(webhook_data, "test-ticket-123")
+        update_excel_file(form_data)
