@@ -3,6 +3,33 @@ name: Status Update Notification
 on:
   repository_dispatch:
     types: [status-update-notification]
+  workflow_dispatch:
+    inputs:
+      status:
+        description: 'Status of the update'
+        required: true
+        default: 'success'
+        type: choice
+        options:
+          - success
+          - failure
+          - cancelled
+          - skipped
+      workflow_name:
+        description: 'Name of the workflow'
+        required: true
+        default: 'Manual Status Update'
+        type: string
+      context:
+        description: 'Context of the status update'
+        required: false
+        default: 'manual'
+        type: string
+      description:
+        description: 'Description of the status update'
+        required: false
+        default: 'Manual status update notification'
+        type: string
 
 jobs:
   notify-status-update:
@@ -15,14 +42,25 @@ jobs:
       - name: Get workflow status
         id: workflow-status
         run: |
-          # Extract data from repository dispatch payload
-          echo "status=${{ github.event.client_payload.status || 'unknown' }}" >> $GITHUB_OUTPUT
-          echo "workflow_name=${{ github.event.client_payload.workflow_name || 'unknown' }}" >> $GITHUB_OUTPUT
-          echo "repository=${{ github.event.client_payload.repository || github.repository }}" >> $GITHUB_OUTPUT
-          echo "run_id=${{ github.event.client_payload.run_id || 'unknown' }}" >> $GITHUB_OUTPUT
-          echo "context=${{ github.event.client_payload.context || 'unknown' }}" >> $GITHUB_OUTPUT
-          echo "description=${{ github.event.client_payload.description || 'Status update notification' }}" >> $GITHUB_OUTPUT
-          echo "app_name=${{ github.event.client_payload.app_name || 'unknown' }}" >> $GITHUB_OUTPUT
+          # Extract data from repository dispatch payload or manual workflow dispatch inputs
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "status=${{ github.event.client_payload.status || 'unknown' }}" >> $GITHUB_OUTPUT
+            echo "workflow_name=${{ github.event.client_payload.workflow_name || 'unknown' }}" >> $GITHUB_OUTPUT
+            echo "repository=${{ github.event.client_payload.repository || github.repository }}" >> $GITHUB_OUTPUT
+            echo "run_id=${{ github.event.client_payload.run_id || 'unknown' }}" >> $GITHUB_OUTPUT
+            echo "context=${{ github.event.client_payload.context || 'unknown' }}" >> $GITHUB_OUTPUT
+            echo "description=${{ github.event.client_payload.description || 'Status update notification' }}" >> $GITHUB_OUTPUT
+            echo "app_name=${{ github.event.client_payload.app_name || 'unknown' }}" >> $GITHUB_OUTPUT
+          else
+            # Manual workflow dispatch inputs
+            echo "status=${{ github.event.inputs.status }}" >> $GITHUB_OUTPUT
+            echo "workflow_name=${{ github.event.inputs.workflow_name }}" >> $GITHUB_OUTPUT
+            echo "repository=${{ github.repository }}" >> $GITHUB_OUTPUT
+            echo "run_id=manual-${{ github.run_id }}" >> $GITHUB_OUTPUT
+            echo "context=${{ github.event.inputs.context }}" >> $GITHUB_OUTPUT
+            echo "description=${{ github.event.inputs.description }}" >> $GITHUB_OUTPUT
+            echo "app_name=Manual Trigger" >> $GITHUB_OUTPUT
+          fi
           
       - name: Send notification
         if: steps.workflow-status.outputs.status != 'skipped'
