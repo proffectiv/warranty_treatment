@@ -56,3 +56,4 @@ htmlcov/
 .claude/
 tests/
 test.py
+CLAUDE.md
