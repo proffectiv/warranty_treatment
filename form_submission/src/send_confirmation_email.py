@@ -69,7 +69,8 @@ def create_confirmation_email(webhook_data):
     año = 'No aplicable' 
     estado = 'No especificado'
     problema = 'No especificado'
-    
+    solucion = 'No especificado'
+
     # Brand-specific fields using human-readable field names
     if marca == 'Conway':
         modelo = get_field_value_by_name(fields, 'Conway - Por favor, indica el nombre completo del modelo (ej. Cairon C 2.0 500)')
@@ -77,6 +78,7 @@ def create_confirmation_email(webhook_data):
         año = get_field_value_by_name(fields, 'Conway - Año de fabricación')
         estado = get_field_value_by_name(fields, 'Conway - Estado de la bicicleta')
         problema = get_field_value_by_name(fields, 'Conway - Descripción del problema')
+        solucion = get_field_value_by_name(fields, 'Conway - Solución propuesta')
     elif marca == 'Cycplus':
         modelo = get_field_value_by_name(fields, 'Cycplus - Modelo')
         estado = get_field_value_by_name(fields, 'Cycplus - Estado del Producto')
@@ -89,6 +91,7 @@ def create_confirmation_email(webhook_data):
         año = get_field_value_by_name(fields, 'Dare - Año de fabricación')
         estado = get_field_value_by_name(fields, 'Dare - Estado de la bicicleta')
         problema = get_field_value_by_name(fields, 'Dare - Descripción del problema')
+        solucion = get_field_value_by_name(fields, 'Dare - Solución propuesta')
     elif marca == 'Kogel':
         # Kogel specific handling if needed
         modelo = 'No especificado'
@@ -96,6 +99,7 @@ def create_confirmation_email(webhook_data):
         año = 'No aplicable'
         estado = 'No especificado'
         problema = 'No especificado'
+        solucion = 'No especificado'
     else:
         # Handle unknown brands - use defaults already set above
         logger.warning(f"Unknown brand: {marca}. Using default values.")
@@ -110,7 +114,7 @@ def create_confirmation_email(webhook_data):
         <div style="background-color: #e8f4fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
             <h3>Número de Ticket</h3>
             <p><strong style="font-size: 18px; color: #1976D2;">{ticket_id}</strong></p>
-            <p><em>Guarde este número para futuras consultas sobre su caso.</em></p>
+            <p><em>Guarde este número para futuras consultas sobre su incidencia.</em></p>
         </div>
         
         <p>Hemos recibido correctamente su solicitud de garantía. A continuación le mostramos un resumen de la información enviada:</p>
@@ -132,6 +136,7 @@ def create_confirmation_email(webhook_data):
                 {"<li><strong>Año de fabricación:</strong> " + str(año) + "</li>" if año != 'No aplicable' else ""}
                 <li><strong>Estado:</strong> {estado}</li>
                 <li><strong>Descripción del problema:</strong> {problema}</li>
+                <li><strong>Solución propuesta:</strong> {solucion}</li>
             </ul>
         </div>
         

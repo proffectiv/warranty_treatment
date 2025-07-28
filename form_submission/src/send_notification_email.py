@@ -194,8 +194,9 @@ def create_notification_email(webhook_data):
         
         <div style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0;">
             <h3>Problema Reportado</h3>
-            <p>{problema}</p>
-            {"<h3>Solución Propuesta:</h3><p>" + str(solucion) + "</p>" if solucion != 'No aplicable' and solucion != 'No especificado' else ""}
+            <p>{problema if problema != 'No especificado' else ''}</p>
+            <h3>Solución Propuesta:</h3>
+            <p>{solucion if solucion != 'No aplicable' else ''}</p>
         </div>
         
         <div style="background-color: #f3e5f5; padding: 15px; border-left: 4px solid #9c27b0; margin: 20px 0;">
@@ -211,7 +212,7 @@ def create_notification_email(webhook_data):
             <ul>
                 <li>✓ Notificación de nuevo ticket generada</li>
                 <li>✓ Email de confirmación enviado al cliente</li>
-                {"<li>✓ Solicitud de garantía enviada a Conway" if marca == 'Conway' else ""}
+                {"<li>✓ Solicitud de garantía enviada a Conway</li>" if marca == 'Conway' else ""}
                 <li>✓ Registro añadido al archivo de Excel en Dropbox</li>   
             </ul>
         </div>

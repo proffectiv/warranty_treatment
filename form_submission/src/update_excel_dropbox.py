@@ -298,7 +298,7 @@ def prepare_row_data(webhook_data, brand):
     if brand == 'Conway':
         row_data = {
             'Ticket ID': ticket_id,
-            'Estado': 'Abierto',
+            'Estado': 'Recibida',
             'Fecha de creación': fecha_creacion,
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
@@ -315,7 +315,7 @@ def prepare_row_data(webhook_data, brand):
     elif brand == 'Cycplus':
         row_data = {
             'Ticket ID': ticket_id,
-            'Estado': 'Abierto',
+            'Estado': 'Recibida',
             'Fecha de creación': fecha_creacion,
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
@@ -330,7 +330,7 @@ def prepare_row_data(webhook_data, brand):
     elif brand == 'Dare':
         row_data = {
             'Ticket ID': ticket_id,
-            'Estado': 'Abierto',
+            'Estado': 'Recibida',
             'Fecha de creación': fecha_creacion,
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
@@ -347,7 +347,7 @@ def prepare_row_data(webhook_data, brand):
         # Kogel structure similar to others - add if needed
         row_data = {
             'Ticket ID': ticket_id,
-            'Estado': 'Abierto',
+            'Estado': 'Recibida',
             'Fecha de creación': fecha_creacion,
             'Empresa': empresa,
             'NIF/CIF/VAT': nif_cif,
