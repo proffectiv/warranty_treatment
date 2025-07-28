@@ -135,7 +135,7 @@ def create_confirmation_email(webhook_data):
             </ul>
         </div>
         
-        <p>Nuestro equipo revisará su solicitud y nos pondremos en contacto con usted lo antes posible para informarle sobre el estado de su caso y los próximos pasos a seguir.</p>
+        <p>Nuestro equipo revisará su solicitud y nos pondremos en contacto con usted lo antes posible para informarle sobre el estado de su incidencia</p>
         
         <p>Si tiene alguna duda, no dude en contactarnos.</p>
         
