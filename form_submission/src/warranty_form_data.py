@@ -387,7 +387,7 @@ class WarrantyFormData:
         if brand == 'Conway':
             return {
                 'Ticket ID': self.ticket_id,
-                'Estado': 'Abierto',
+                'Estado': 'Recibida',
                 'Fecha de creación': fecha_creacion,
                 'Empresa': self.empresa,
                 'NIF/CIF/VAT': self.nif_cif,
@@ -406,7 +406,7 @@ class WarrantyFormData:
         elif brand == 'Cycplus':
             return {
                 'Ticket ID': self.ticket_id,
-                'Estado': 'Abierto',
+                'Estado': 'Recibida',
                 'Fecha de creación': fecha_creacion,
                 'Empresa': self.empresa,
                 'NIF/CIF/VAT': self.nif_cif,
@@ -423,7 +423,7 @@ class WarrantyFormData:
         elif brand == 'Dare':
             return {
                 'Ticket ID': self.ticket_id,
-                'Estado': 'Abierto',
+                'Estado': 'Recibida',
                 'Fecha de creación': fecha_creacion,
                 'Empresa': self.empresa,
                 'NIF/CIF/VAT': self.nif_cif,
@@ -441,7 +441,7 @@ class WarrantyFormData:
         elif brand == 'Kogel':
             return {
                 'Ticket ID': self.ticket_id,
-                'Estado': 'Abierto',
+                'Estado': 'Recibida',
                 'Fecha de creación': fecha_creacion,
                 'Empresa': self.empresa,
                 'NIF/CIF/VAT': self.nif_cif,
@@ -459,7 +459,7 @@ class WarrantyFormData:
             # Generic format
             return {
                 'Ticket ID': self.ticket_id,
-                'Estado': 'Abierto',
+                'Estado': 'Recibida',
                 'Fecha de creación': fecha_creacion,
                 'Empresa': self.empresa,
                 'NIF/CIF/VAT': self.nif_cif,

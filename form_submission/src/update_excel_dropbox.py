@@ -6,7 +6,9 @@ import sys
 from datetime import datetime, timedelta
 from io import BytesIO
 from dotenv import load_dotenv
-from difflib import SequenceMatcher
+# SequenceMatcher removed - no longer needed
+from openpyxl import load_workbook
+from openpyxl.worksheet.datavalidation import DataValidation
 
 # Import logging filter from root directory
 import os
@@ -74,198 +76,275 @@ def upload_excel_to_dropbox(access_token, file_path, excel_data):
 
 # Remove the old field parsing function since we now use WarrantyFormData
 
-def text_similarity(text1, text2):
-    """Calculate similarity between two texts using SequenceMatcher"""
-    if not text1 and not text2:
-        return 1.0
-    if not text1 or not text2:
-        return 0.0
-    return SequenceMatcher(None, str(text1).lower(), str(text2).lower()).ratio()
-
-def calculate_duplicate_probability(form_data: WarrantyFormData, existing_df):
-    """
-    Calculate the probability that this form submission is a duplicate
-    Returns probability (0.0-1.0) and the most similar existing record
-    """
-    
-    current_nif = form_data.nif_cif.strip().upper()
-    current_email = form_data.email.strip().lower()
-    current_brand = form_data.brand
-    current_time = datetime.now()
-    current_model = form_data.modelo
-    current_size = form_data.talla if form_data.talla != 'No aplicable' else 'N/A'
-    
-    # Filter existing records for same NIF
-    if existing_df.empty:
-        return 0.0, None
-    
-    # Look for records with same NIF
-    same_nif_records = existing_df[existing_df['NIF/CIF/VAT'].str.upper().str.strip() == current_nif]
-    
-    if same_nif_records.empty:
-        return 0.0, None
-    
-    max_probability = 0.0
-    most_similar_record = None
-    
-    for _, record in same_nif_records.iterrows():
-        probability_factors = []
-        
-        # 1. Email similarity (20% weight)
-        email_similarity = text_similarity(current_email, str(record.get('Email', '')).strip().lower())
-        probability_factors.append(('email', email_similarity, 0.20))
-        
-        # 2. Brand exact match (25% weight) - brands are in separate sheets, so this is always 1.0
-        brand_match = 1.0  # Since we're checking within the same brand sheet
-        probability_factors.append(('brand', brand_match, 0.25))
-        
-        # 3. Model similarity (20% weight)
-        model_similarity = text_similarity(current_model, str(record.get('Modelo', '')))
-        probability_factors.append(('model', model_similarity, 0.20))
-        
-        # 4. Size similarity (10% weight for Conway/Dare, 0% for others)
-        if form_data.is_conway() or form_data.is_dare():
-            size_similarity = text_similarity(current_size, str(record.get('Talla', '')))
-            probability_factors.append(('size', size_similarity, 0.10))
-        
-        # 5. Time proximity (25% weight)
-        try:
-            record_time = datetime.strptime(str(record.get('Fecha de creación', '')), '%d/%m/%Y')
-            # Add current time to make comparison fair (assume submitted at similar time)
-            record_time = record_time.replace(hour=current_time.hour, minute=current_time.minute)
-            time_diff = abs((current_time - record_time).total_seconds())
-            
-            # Calculate time similarity (closer = higher probability)
-            # 1 hour = 0.9, 6 hours = 0.7, 24 hours = 0.3, 48 hours = 0.1
-            if time_diff <= 3600:  # 1 hour
-                time_similarity = 0.95
-            elif time_diff <= 21600:  # 6 hours
-                time_similarity = 0.80
-            elif time_diff <= 86400:  # 24 hours
-                time_similarity = 0.40
-            elif time_diff <= 172800:  # 48 hours
-                time_similarity = 0.15
-            else:
-                time_similarity = 0.05
-                
-        except:
-            time_similarity = 0.0
-            
-        probability_factors.append(('time', time_similarity, 0.25))
-        
-        # Calculate weighted probability
-        total_probability = sum(score * weight for _, score, weight in probability_factors)
-        
-        # Bonus for very high individual scores
-        high_individual_scores = [score for _, score, _ in probability_factors if score > 0.9]
-        if len(high_individual_scores) >= 3:
-            total_probability += 0.1  # 10% bonus
-        
-        if total_probability > max_probability:
-            max_probability = total_probability
-            most_similar_record = {
-                'record': record,
-                'factors': probability_factors,
-                'total_score': total_probability
-            }
-    
-    return min(max_probability, 1.0), most_similar_record
-
-def check_for_duplicates(form_data: WarrantyFormData):
-    """
-    Check if the current submission is likely a duplicate
-    Returns (is_duplicate, probability, details)
-    """
-    try:
-        brand = form_data.brand
-        
-        if not brand or brand == 'No especificado':
-            return False, 0.0, "Could not determine brand"
-        
-        # Download and check Excel file
-        access_token = get_dropbox_access_token()
-        folder_path = os.getenv('DROPBOX_FOLDER_PATH')
-        file_path = f"{folder_path}/GARANTIAS_PROFFECTIV.xlsx"
-        
-        try:
-            excel_file = download_excel_from_dropbox(access_token, file_path)
-            df = pd.read_excel(excel_file, sheet_name=brand)
-        except Exception as e:
-            # If file doesn't exist or sheet doesn't exist, no duplicates possible
-            logger.warning(f"Could not read Excel file for duplicate check: {str(e)}")
-            return False, 0.0, f"Could not access existing records: {str(e)}"
-        
-        # Calculate duplicate probability
-        probability, similar_record = calculate_duplicate_probability(form_data, df)
-        
-        # Define threshold for considering it a duplicate
-        DUPLICATE_THRESHOLD = 0.75  # 75% similarity threshold
-        
-        is_duplicate = probability >= DUPLICATE_THRESHOLD
-        
-        details = {
-            'probability': probability,
-            'threshold': DUPLICATE_THRESHOLD,
-            'brand': brand,
-            'similar_record': similar_record
-        }
-        
-        return is_duplicate, probability, details
-        
-    except Exception as e:
-        logger.error(f"Error during duplicate check: {str(e)}")
-        return False, 0.0, f"Error during duplicate check: {str(e)}"
+# Duplicate detection functions removed as requested
 
 # Remove the old prepare_row_data function since we now use WarrantyFormData.to_excel_row()
 
+def find_column_index(worksheet, column_name):
+    """Find the column index for a given column name in the header row"""
+    for col_idx, cell in enumerate(worksheet[1], 1):
+        if cell.value == column_name:
+            return col_idx
+    return None
+
+def find_first_empty_row_within_validation(worksheet, column_index):
+    """Find the first empty row within the existing data validation range"""
+    try:
+        # Find the data validation range for our column
+        validation_end_row = None
+        
+        for dv in worksheet.data_validations:
+            for range_obj in dv.ranges:
+                if range_obj.min_col <= column_index <= range_obj.max_col:
+                    validation_end_row = range_obj.max_row
+                    logger.info(f"Found data validation range ending at row {validation_end_row} for column {column_index}")
+                    break
+            if validation_end_row:
+                break
+        
+        if not validation_end_row:
+            logger.warning(f"No data validation found for column {column_index}")
+            return None
+            
+        # Find the first empty row within the validation range
+        # Check from row 2 (after headers) to the end of validation range
+        for row in range(2, validation_end_row + 1):
+            # Check if this row is empty (no ticket ID)
+            ticket_id_cell = worksheet.cell(row=row, column=1)  # Assuming Ticket ID is in column 1
+            if not ticket_id_cell.value or not str(ticket_id_cell.value).strip():
+                logger.info(f"Found empty row {row} within validation range (ends at {validation_end_row})")
+                return row
+                
+        # If no empty row found within range, we need to extend the validation
+        logger.warning(f"No empty rows found within validation range (2-{validation_end_row})")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error finding empty row within validation range: {str(e)}")
+        return None
+
+def extend_data_validation_range(worksheet, column_index, new_row):
+    """Extend existing data validation range to include the new row"""
+    try:
+        # Find all data validation rules that include our column
+        validations_to_update = []
+        
+        for dv in list(worksheet.data_validations):
+            for range_obj in dv.ranges:
+                # Check if this range includes our Estado column
+                if range_obj.min_col <= column_index <= range_obj.max_col:
+                    validations_to_update.append((dv, range_obj))
+                    logger.info(f"Found validation range: {range_obj.coord} (rows {range_obj.min_row}-{range_obj.max_row})")
+                    break
+        
+        if not validations_to_update:
+            logger.warning(f"No data validation found for column {column_index}")
+            return
+        
+        # Update each validation rule
+        for dv, matching_range in validations_to_update:
+            # Check if new_row is already within the range
+            if matching_range.min_row <= new_row <= matching_range.max_row:
+                logger.info(f"Row {new_row} is already within validation range {matching_range.coord}")
+                continue
+                
+            # Remove the old validation
+            worksheet.data_validations.remove(dv)
+            
+            # Create new validation with same properties
+            new_dv = DataValidation(
+                type=dv.type,
+                formula1=dv.formula1,
+                formula2=dv.formula2,
+                showDropDown=dv.showDropDown,
+                showInputMessage=dv.showInputMessage,
+                showErrorMessage=dv.showErrorMessage,
+                errorTitle=dv.errorTitle,
+                error=dv.error,
+                promptTitle=dv.promptTitle,
+                prompt=dv.prompt
+            )
+            
+            # Add all ranges, extending the one that matches our column
+            for range_obj in dv.ranges:
+                if range_obj == matching_range:
+                    # Extend this range to include the new row
+                    start_col = range_obj.min_col
+                    end_col = range_obj.max_col
+                    start_row = range_obj.min_row
+                    end_row = max(range_obj.max_row, new_row)
+                    
+                    # Create extended range string
+                    start_cell = worksheet.cell(row=start_row, column=start_col).coordinate
+                    end_cell = worksheet.cell(row=end_row, column=end_col).coordinate
+                    extended_range = f"{start_cell}:{end_cell}"
+                    
+                    new_dv.add(extended_range)
+                    logger.info(f"Extended data validation range from {range_obj.coord} to: {extended_range}")
+                else:
+                    # Keep original range for other columns
+                    new_dv.add(range_obj.coord)
+            
+            # Add the updated validation rule
+            worksheet.add_data_validation(new_dv)
+            logger.info(f"Updated data validation for column {column_index}")
+            
+    except Exception as e:
+        logger.error(f"Error extending data validation range: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+
 def update_excel_file(form_data: WarrantyFormData):
-    """Main function to update Excel file in Dropbox using WarrantyFormData object"""
+    """Main function to update Excel file in Dropbox using WarrantyFormData object with openpyxl to preserve formatting"""
     try:
         brand = form_data.brand
         
         if not brand or brand == 'No especificado':
             raise Exception("Brand not found in form data")
         
+        logger.info(f"Processing Excel update for brand: {brand}")
+        logger.info(f"Form data ticket ID: {form_data.ticket_id}")
+        
         # Get Dropbox credentials
         access_token = get_dropbox_access_token()
         folder_path = os.getenv('DROPBOX_FOLDER_PATH')
         file_path = f"{folder_path}/GARANTIAS_PROFFECTIV.xlsx"
         
+        logger.info(f"Downloading Excel file from: {file_path}")
+        
         # Download existing Excel file
         excel_file = download_excel_from_dropbox(access_token, file_path)
         
-        # Load Excel file
-        excel_data = pd.ExcelFile(excel_file)
+        # Load workbook with openpyxl to preserve formatting and data validation
+        workbook = load_workbook(excel_file, data_only=False)
+        
+        logger.info(f"Available sheets in workbook: {workbook.sheetnames}")
         
         # Check if brand sheet exists
-        if brand not in excel_data.sheet_names:
+        if brand not in workbook.sheetnames:
             raise Exception(f"Sheet '{brand}' not found in Excel file")
         
-        # Load the specific brand sheet
-        df = pd.read_excel(excel_file, sheet_name=brand)
+        # Get the specific brand worksheet
+        worksheet = workbook[brand]
+        
+        # Get column headers from first row to map data correctly
+        headers = {}
+        for col_idx, cell in enumerate(worksheet[1], 1):
+            if cell.value:
+                headers[cell.value] = col_idx
+        
+        logger.info(f"Excel headers found: {list(headers.keys())}")
+        
+        # Find all rows with ticket ID data to understand the data structure
+        ticket_id_col = headers.get('Ticket ID', 1)
+        estado_col = headers.get('Estado')
+        
+        # First, try to find an empty row within the existing data validation range
+        next_row = None
+        if estado_col:
+            next_row = find_first_empty_row_within_validation(worksheet, estado_col)
+        
+        if next_row:
+            logger.info(f"Found empty row {next_row} within existing data validation range")
+        else:
+            # Fallback to the original logic: find actual data rows and add after them
+            data_rows = []
+            
+            # Scan a reasonable range to find actual data (not the full max_row which includes formatting)
+            scan_range = min(worksheet.max_row + 1, 2000)  # Limit scan to prevent performance issues
+            
+            for row in range(2, scan_range):
+                ticket_id = worksheet.cell(row=row, column=ticket_id_col).value
+                if ticket_id and str(ticket_id).strip():
+                    data_rows.append(row)
+            
+            if not data_rows:
+                # No existing data, start at row 2
+                next_row = 2
+                logger.info("No existing data found, starting at row 2")
+            else:
+                # Find the last row with data and add after it
+                actual_last_row = max(data_rows)
+                first_data_row = min(data_rows)
+                total_data_rows = len(data_rows)
+                
+                logger.info(f"Found {total_data_rows} data rows, range: {first_data_row}-{actual_last_row}")
+                next_row = actual_last_row + 1
+        
+        current_max_row = worksheet.max_row
+        
+        logger.info(f"Worksheet max_row: {current_max_row}")
+        logger.info(f"Will write to row: {next_row}")
+        
+        # Double-check that we're not overwriting existing data
+        test_cell = worksheet.cell(row=next_row, column=ticket_id_col)
+        if test_cell.value is not None:
+            logger.warning(f"Row {next_row} already has data! Ticket ID: {test_cell.value}")
+            # Find the actual next empty row
+            for row in range(next_row, worksheet.max_row + 100):
+                if worksheet.cell(row=row, column=ticket_id_col).value is None:
+                    next_row = row
+                    logger.info(f"Found actual empty row: {next_row}")
+                    break
         
         # Prepare new row data using form_data
-        new_row = form_data.to_excel_row(brand)
+        new_row_data = form_data.to_excel_row(brand)
         
-        # Add new row to dataframe
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        logger.info(f"New row data keys: {list(new_row_data.keys())}")
+        logger.info(f"New row data values: {list(new_row_data.values())}")
         
-        # Save all sheets back to Excel
+        # Write new row data to worksheet
+        cells_written = 0
+        estado_col_idx = None
+        for column_name, value in new_row_data.items():
+            if column_name in headers:
+                col_idx = headers[column_name]
+                cell = worksheet.cell(row=next_row, column=col_idx)
+                old_value = cell.value
+                cell.value = value
+                cells_written += 1
+                
+                # Remember Estado column for validation extension
+                if column_name == 'Estado':
+                    estado_col_idx = col_idx
+                
+                logger.info(f"Writing to cell {cell.coordinate} (row {next_row}, col {col_idx}): '{column_name}' = '{value}' (was: '{old_value}')")
+            else:
+                logger.warning(f"Column '{column_name}' not found in Excel headers")
+        
+        # After writing all data, extend data validation for Estado column if needed
+        if estado_col_idx:
+            extend_data_validation_range(worksheet, estado_col_idx, next_row)
+        
+        logger.info(f"Total cells written: {cells_written}")
+        
+        # Verify the data was written by checking a few key cells
+        verification_cells = ['Ticket ID', 'Estado', 'Empresa']
+        for col_name in verification_cells:
+            if col_name in headers:
+                col_idx = headers[col_name]
+                cell_value = worksheet.cell(row=next_row, column=col_idx).value
+                logger.info(f"Verification - {col_name}: '{cell_value}'")
+        
+        # Check new max row after writing
+        new_max_row = worksheet.max_row
+        logger.info(f"New max row after writing: {new_max_row} (should be {next_row})")
+        
+        # Save workbook to BytesIO
+        logger.info("Saving workbook to BytesIO...")
         output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Write all existing sheets
-            for sheet_name in excel_data.sheet_names:
-                if sheet_name == brand:
-                    # Write updated sheet
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-                else:
-                    # Write original sheet
-                    original_df = pd.read_excel(excel_file, sheet_name=sheet_name)
-                    original_df.to_excel(writer, sheet_name=sheet_name, index=False)
-        
+        workbook.save(output)
         output.seek(0)
         
+        # Get size of saved data
+        saved_size = len(output.getvalue())
+        logger.info(f"Saved Excel file size: {saved_size} bytes")
+        
+        if saved_size == 0:
+            raise Exception("Saved Excel file is empty!")
+        
         # Upload updated file back to Dropbox
+        logger.info("Uploading file to Dropbox...")
         upload_result = upload_excel_to_dropbox(access_token, file_path, output.getvalue())
         
         logger.info(f"Excel file updated successfully. New row added to {brand} sheet.")
