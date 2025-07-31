@@ -9,6 +9,8 @@ on:
 jobs:
   notify-status-updates:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout repository
@@ -47,7 +49,7 @@ jobs:
       - name: Commit status history updates
         run: |
           git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action Bot"
+          git config --local user.name "GitHub Action"
           
           # Check if status_history.json was modified
           if [[ -n $(git status --porcelain status_update_notification/status_history.json) ]]; then
