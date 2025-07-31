@@ -17,7 +17,7 @@ from warranty_form_data import WarrantyFormData
 from send_confirmation_email import send_confirmation_email
 from send_notification_email import send_notification_email
 from send_conway_notification_email import send_conway_notification_email
-from update_excel_dropbox import update_excel_file
+from update_excel_dropbox import update_excel_file, update_ticket_status
 
 # Initialize logger
 logger = setup_secure_logging('main')
@@ -114,6 +114,17 @@ def process_warranty_form(webhook_data):
             results['conway_notification'] = send_conway_notification_email(form_data)
             if results['conway_notification']:
                 logger.info("Conway notification email sent successfully")
+                
+                # Step 5: Update Excel status to "Tramitada" for Conway after successful notification
+                logger.info("Updating Excel status to 'Tramitada' for Conway ticket")
+                try:
+                    status_update_success = update_ticket_status(form_data.ticket_id, form_data.brand, 'Tramitada')
+                    if status_update_success:
+                        logger.info("Excel status updated to 'Tramitada' successfully")
+                    else:
+                        logger.error("Failed to update Excel status to 'Tramitada'")
+                except Exception as e:
+                    logger.error(f"Error updating Excel status to 'Tramitada': {str(e)}")
             else:
                 logger.error("Failed to send Conway notification email")
         except Exception as e:

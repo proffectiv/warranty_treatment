@@ -90,6 +90,72 @@ def find_column_index(worksheet, column_name):
 # Removed find_first_empty_row_within_validation and extend_data_validation_range functions
 # since we now use worksheet.insert_rows() which automatically handles data validation ranges
 
+def update_ticket_status(ticket_id: str, brand: str, new_status: str):
+    """Update the status of an existing ticket in the Excel file"""
+    try:
+        logger.info(f"Updating status for ticket {ticket_id} in {brand} sheet to '{new_status}'")
+        
+        # Get Dropbox credentials
+        access_token = get_dropbox_access_token()
+        folder_path = os.getenv('DROPBOX_FOLDER_PATH')
+        file_path = f"{folder_path}/GARANTIAS_PROFFECTIV.xlsx"
+        
+        # Download existing Excel file
+        excel_file = download_excel_from_dropbox(access_token, file_path)
+        
+        # Load workbook with openpyxl
+        workbook = load_workbook(excel_file, data_only=False)
+        
+        # Check if brand sheet exists
+        if brand not in workbook.sheetnames:
+            raise Exception(f"Sheet '{brand}' not found in Excel file")
+        
+        # Get the specific brand worksheet
+        worksheet = workbook[brand]
+        
+        # Get column headers
+        headers = {}
+        for col_idx, cell in enumerate(worksheet[1], 1):
+            if cell.value:
+                headers[cell.value] = col_idx
+        
+        # Find Ticket ID and Estado columns
+        ticket_id_col = headers.get('Ticket ID')
+        estado_col = headers.get('Estado')
+        
+        if not ticket_id_col or not estado_col:
+            raise Exception(f"Required columns not found. Ticket ID: {ticket_id_col}, Estado: {estado_col}")
+        
+        # Find the row with the matching ticket ID
+        updated = False
+        for row in range(2, worksheet.max_row + 1):
+            current_ticket_id = worksheet.cell(row=row, column=ticket_id_col).value
+            if current_ticket_id and str(current_ticket_id).strip() == ticket_id:
+                # Update the status
+                old_status = worksheet.cell(row=row, column=estado_col).value
+                worksheet.cell(row=row, column=estado_col).value = new_status
+                logger.info(f"Updated ticket {ticket_id} status from '{old_status}' to '{new_status}' at row {row}")
+                updated = True
+                break
+        
+        if not updated:
+            raise Exception(f"Ticket ID {ticket_id} not found in {brand} sheet")
+        
+        # Save workbook to BytesIO
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        # Upload updated file back to Dropbox
+        upload_excel_to_dropbox(access_token, file_path, output.getvalue())
+        
+        logger.info(f"Successfully updated status for ticket {ticket_id} to '{new_status}'")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error updating ticket status: {str(e)}")
+        return False
+
 def update_excel_file(form_data: WarrantyFormData):
     """Main function to update Excel file in Dropbox using WarrantyFormData object with openpyxl to preserve formatting"""
     try:
