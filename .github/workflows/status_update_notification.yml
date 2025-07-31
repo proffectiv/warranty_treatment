@@ -50,13 +50,10 @@ jobs:
           git config --local user.name "GitHub Action Bot"
           
           # Check if status_history.json was modified
-          if git diff --name-only | grep -q "status_update_notification/status_history.json"; then
+          if [[ -n $(git status --porcelain status_update_notification/status_history.json) ]]; then
+            echo "📝 Changes detected in status_history.json, committing..."
             git add status_update_notification/status_history.json
-            git commit -m "🤖 Update status_history.json - automated status tracking
-            
-            🤖 Generated with [Claude Code](https://claude.ai/code)
-            
-            Co-Authored-By: Claude <noreply@anthropic.com>"
+            git commit -m "🤖 Update status_history.json - automated status tracking"
             git push
             echo "✅ Status history changes committed and pushed"
           else
