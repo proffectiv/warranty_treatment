@@ -1,6 +1,14 @@
 {
-  "last_updated": "2025-07-31T08:51:47.881418",
+  "last_updated": "2025-07-31T08:57:58.161072",
   "tickets": {
-    
+    "Conway_f0bc8f4a-cbe7-48ec-bc4a-6c6cb7de05bd": {
+      "status": "Recibida",
+      "last_updated": "2025-07-31T08:57:58.161041",
+      "ticket_id": "f0bc8f4a-cbe7-48ec-bc4a-6c6cb7de05bd",
+      "brand": "Conway",
+      "email": "cabagu35@gmail.com",
+      "empresa": "AURA SYSTEMS SCP",
+      "creation_date": "31/07/2025"
+    }
   }
 }
