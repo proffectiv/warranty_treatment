@@ -201,8 +201,8 @@ class EmailSender:
         if not failed_tickets:
             return """
             <div style="background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;">
-                <h3>✅ All Notifications Sent Successfully</h3>
-                <p>No failed notifications to report.</p>
+                <h3>✅ Todas las notificaciones se han enviado correctamente</h3>
+                <p>No hay notificaciones fallidas para reportar.</p>
             </div>
             """
         
@@ -218,8 +218,8 @@ class EmailSender:
         
         return f"""
         <div style="background-color: #f8d7da; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0;">
-            <h3>❌ Failed Notifications</h3>
-            <p>The following notifications failed to send:</p>
+            <h3>❌ Notificaciones fallidas</h3>
+            <p>Las siguientes notificaciones no se han enviado:</p>
             <ul>
                 {failed_list}
             </ul>
