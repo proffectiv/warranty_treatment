@@ -96,8 +96,11 @@ class StatusTracker:
         changes_to_notify = []
         
         try:
-            # Process all current tickets
-            for brand, tickets in current_tickets.items():
+            # Filter tickets to only include those created within 90 days
+            filtered_tickets = self._filter_tickets_by_creation_date(current_tickets, days=90)
+            
+            # Process filtered current tickets
+            for brand, tickets in filtered_tickets.items():
                 for ticket in tickets:
                     ticket_key = self._get_ticket_key(ticket)
                     current_status = ticket.get('Estado', '').strip()
@@ -129,6 +132,66 @@ class StatusTracker:
             logger.error(f"Error detecting status changes: {str(e)}")
             return []
     
+    def _filter_tickets_by_creation_date(self, current_tickets: Dict[str, List[Dict[str, Any]]], days: int = 90) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Filter tickets to only include those created within the specified number of days
+        
+        Args:
+            current_tickets: Current ticket data from Excel (brand -> list of tickets)
+            days: Number of days to look back from today
+            
+        Returns:
+            Filtered dictionary with only recent tickets
+        """
+        from datetime import timedelta
+        
+        cutoff_date = datetime.now() - timedelta(days=days)
+        filtered_tickets = {}
+        total_original = 0
+        total_filtered = 0
+        
+        for brand, tickets in current_tickets.items():
+            total_original += len(tickets)
+            filtered_brand_tickets = []
+            
+            for ticket in tickets:
+                creation_date_str = ticket.get('Fecha de creación', '')
+                if not creation_date_str:
+                    # If no creation date, assume it's old and skip it
+                    logger.warning(f"No creation date found for ticket {ticket.get('Ticket ID', 'N/A')}, skipping")
+                    continue
+                
+                try:
+                    # Handle both string and datetime objects
+                    if isinstance(creation_date_str, datetime):
+                        # Already a datetime object
+                        creation_date = creation_date_str
+                        logger.debug(f"Ticket {ticket.get('Ticket ID', 'N/A')} has datetime object: {creation_date}")
+                    elif isinstance(creation_date_str, str):
+                        # Parse the creation date string (format: dd/mm/yyyy)
+                        creation_date = datetime.strptime(creation_date_str, '%d/%m/%Y')
+                        logger.debug(f"Ticket {ticket.get('Ticket ID', 'N/A')} parsed string date: {creation_date}")
+                    else:
+                        logger.warning(f"Unexpected date type {type(creation_date_str)} for ticket {ticket.get('Ticket ID', 'N/A')}: {creation_date_str}")
+                        continue
+                    
+                    # Only include tickets created within the specified days
+                    if creation_date >= cutoff_date:
+                        filtered_brand_tickets.append(ticket)
+                        total_filtered += 1
+                    else:
+                        logger.debug(f"Ticket {ticket.get('Ticket ID', 'N/A')} created on {creation_date.strftime('%d/%m/%Y')} is older than {days} days, skipping")
+                        
+                except ValueError as e:
+                    logger.warning(f"Invalid date format '{creation_date_str}' for ticket {ticket.get('Ticket ID', 'N/A')}: {str(e)}")
+                    continue
+            
+            if filtered_brand_tickets:
+                filtered_tickets[brand] = filtered_brand_tickets
+        
+        logger.info(f"Filtered tickets by creation date: {total_filtered}/{total_original} tickets within {days} days")
+        return filtered_tickets
+    
     def _should_notify(self, previous_status: str, current_status: str) -> bool:
         """
         Determine if a status change requires notification
@@ -158,16 +221,19 @@ class StatusTracker:
     def update_status_history(self, current_tickets: Dict[str, List[Dict[str, Any]]]):
         """
         Update status history with current ticket states
+        Only tracks tickets created within 90 days, but keeps final status tickets in history
         
         Args:
             current_tickets: Current ticket data from Excel
         """
         try:
             updated_count = 0
-            cleaned_count = 0
             
-            # Update with current tickets
-            for brand, tickets in current_tickets.items():
+            # Filter tickets to only include those created within 90 days
+            filtered_tickets = self._filter_tickets_by_creation_date(current_tickets, days=90)
+            
+            # Update with filtered current tickets
+            for brand, tickets in filtered_tickets.items():
                 for ticket in tickets:
                     ticket_key = self._get_ticket_key(ticket)
                     current_status = ticket.get('Estado', '').strip()
@@ -183,24 +249,15 @@ class StatusTracker:
                         'ticket_id': ticket.get('Ticket ID'),
                         'brand': ticket.get('Brand'),
                         'email': ticket.get('Email'),
-                        'empresa': ticket.get('Empresa', '')
+                        'empresa': ticket.get('Empresa', ''),
+                        'creation_date': ticket.get('Fecha de creación', '')
                     }
                     updated_count += 1
-            
-            # Clean up tickets in final states (no longer need tracking)
-            tickets_to_remove = []
-            for ticket_key, ticket_info in self.status_history['tickets'].items():
-                if ticket_info.get('status') in self.final_statuses:
-                    tickets_to_remove.append(ticket_key)
-            
-            for ticket_key in tickets_to_remove:
-                del self.status_history['tickets'][ticket_key]
-                cleaned_count += 1
             
             # Save updated history
             self._save_status_history()
             
-            logger.info(f"Updated status history: {updated_count} tickets updated, {cleaned_count} final tickets cleaned")
+            logger.info(f"Updated status history: {updated_count} tickets updated")
             
         except Exception as e:
             logger.error(f"Error updating status history: {str(e)}")
@@ -242,12 +299,12 @@ class StatusTracker:
             logger.error(f"Error getting status summary: {str(e)}")
             return {}
     
-    def cleanup_old_entries(self, days_old: int = 30):
+    def cleanup_old_entries(self, days_old: int = 90):
         """
-        Clean up old entries from status history
+        Clean up old entries from status history based on ticket creation date
         
         Args:
-            days_old: Remove entries older than this many days
+            days_old: Remove entries for tickets created more than this many days ago (default: 90)
         """
         try:
             from datetime import timedelta
@@ -256,15 +313,43 @@ class StatusTracker:
             tickets_to_remove = []
             
             for ticket_key, ticket_info in self.status_history['tickets'].items():
-                last_updated_str = ticket_info.get('last_updated')
-                if last_updated_str:
-                    try:
-                        last_updated = datetime.fromisoformat(last_updated_str)
-                        if last_updated < cutoff_date:
+                creation_date_str = ticket_info.get('creation_date', '')
+                
+                if not creation_date_str:
+                    # If no creation date, use last_updated as fallback
+                    last_updated_str = ticket_info.get('last_updated')
+                    if last_updated_str:
+                        try:
+                            last_updated = datetime.fromisoformat(last_updated_str)
+                            if last_updated < cutoff_date:
+                                tickets_to_remove.append(ticket_key)
+                                logger.debug(f"Removing ticket {ticket_key} - no creation date, last updated {last_updated_str}")
+                        except ValueError:
+                            # Invalid date format, remove entry
                             tickets_to_remove.append(ticket_key)
+                            logger.debug(f"Removing ticket {ticket_key} - invalid last_updated date format")
+                else:
+                    try:
+                        # Handle both string and datetime objects for creation date
+                        if isinstance(creation_date_str, datetime):
+                            # Already a datetime object
+                            creation_date = creation_date_str
+                        elif isinstance(creation_date_str, str):
+                            # Parse creation date string (format: dd/mm/yyyy)
+                            creation_date = datetime.strptime(creation_date_str, '%d/%m/%Y')
+                        else:
+                            # Invalid type, remove entry
+                            tickets_to_remove.append(ticket_key)
+                            logger.debug(f"Removing ticket {ticket_key} - invalid creation date type: {type(creation_date_str)}")
+                            continue
+                            
+                        if creation_date < cutoff_date:
+                            tickets_to_remove.append(ticket_key)
+                            logger.debug(f"Removing ticket {ticket_key} - created {creation_date.strftime('%d/%m/%Y') if isinstance(creation_date, datetime) else creation_date_str}, older than {days_old} days")
                     except ValueError:
                         # Invalid date format, remove entry
                         tickets_to_remove.append(ticket_key)
+                        logger.debug(f"Removing ticket {ticket_key} - invalid creation date format: {creation_date_str}")
             
             # Remove old entries
             for ticket_key in tickets_to_remove:
@@ -272,7 +357,9 @@ class StatusTracker:
             
             if tickets_to_remove:
                 self._save_status_history()
-                logger.info(f"Cleaned up {len(tickets_to_remove)} old entries from status history")
+                logger.info(f"Cleaned up {len(tickets_to_remove)} old entries from status history (older than {days_old} days)")
+            else:
+                logger.info("No old entries found to clean up")
             
         except Exception as e:
             logger.error(f"Error cleaning up old entries: {str(e)}")

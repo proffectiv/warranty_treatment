@@ -262,5 +262,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         with open(sys.argv[1], 'r') as f:
             webhook_data = json.load(f)
-        form_data = WarrantyFormData(webhook_data, "test-ticket-123")
+        form_data = WarrantyFormData(webhook_data, "test-ticket-555")
         send_notification_email(form_data)

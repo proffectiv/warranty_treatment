@@ -101,7 +101,7 @@ def main():
         
         # Step 6: Cleanup old entries (optional)
         logger.info("Step 6: Cleaning up old status history entries...")
-        status_tracker.cleanup_old_entries(days_old=30)
+        status_tracker.cleanup_old_entries(days_old=90)
         
         # Final summary
         logger.info("=" * 60)

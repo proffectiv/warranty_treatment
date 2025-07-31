@@ -103,11 +103,8 @@ class ExcelReader:
                 df = excel_data[brand]
                 tickets = []
                 
-                # Process each row (skip header)
-                for index, row in df.iterrows():
-                    if index == 0:  # Skip header row
-                        continue
-                    
+                # Process each row (pandas automatically handles headers)
+                for _, row in df.iterrows():
                     # Extract ticket data
                     ticket_data = {}
                     for col in df.columns:

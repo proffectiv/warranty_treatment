@@ -398,10 +398,10 @@ class WarrantyFormData:
                 'Estado de la bicicleta': self.estado,
                 'Descripción del problema': self.problema,
                 'Solución y/o reparación propuesta y presupuesto': self.solucion,
-                'Factura de compra': self.factura_compra[0].url if self.factura_compra else '',
-                'Factura de venta': self.factura_venta[0].url if self.factura_venta else '',
-                'Imágenes': self.fotos_problema[0].url if self.fotos_problema else '',
-                'Vídeos': self.videos_problema[0].url if self.videos_problema else ''
+                'Factura de compra': {'type': 'hyperlink', 'url': self.factura_compra[0].url, 'text': self.factura_compra[0].name} if self.factura_compra else '',
+                'Factura de venta': {'type': 'hyperlink', 'url': self.factura_venta[0].url, 'text': self.factura_venta[0].name} if self.factura_venta else '',
+                'Imágenes': {'type': 'hyperlink', 'url': self.fotos_problema[0].url, 'text': self.fotos_problema[0].name} if self.fotos_problema else '',
+                'Vídeos': {'type': 'hyperlink', 'url': self.videos_problema[0].url, 'text': self.videos_problema[0].name} if self.videos_problema else ''
             }
         elif brand == 'Cycplus':
             return {
@@ -415,10 +415,10 @@ class WarrantyFormData:
                 'Estado del producto': self.estado,
                 'Descripción del problema': self.problema,
                 'Solución y/o reparación propuesta y presupuesto': 'No aplicable',
-                'Factura de compra': self.factura_compra[0].url if self.factura_compra else '',
-                'Factura de venta': self.factura_venta[0].url if self.factura_venta else '',
-                'Imágenes': self.fotos_problema[0].url if self.fotos_problema else '',
-                'Vídeos': self.videos_problema[0].url if self.videos_problema else ''
+                'Factura de compra': {'type': 'hyperlink', 'url': self.factura_compra[0].url, 'text': self.factura_compra[0].name} if self.factura_compra else '',
+                'Factura de venta': {'type': 'hyperlink', 'url': self.factura_venta[0].url, 'text': self.factura_venta[0].name} if self.factura_venta else '',
+                'Imágenes': {'type': 'hyperlink', 'url': self.fotos_problema[0].url, 'text': self.fotos_problema[0].name} if self.fotos_problema else '',
+                'Vídeos': {'type': 'hyperlink', 'url': self.videos_problema[0].url, 'text': self.videos_problema[0].name} if self.videos_problema else ''
             }
         elif brand == 'Dare':
             return {
@@ -433,10 +433,10 @@ class WarrantyFormData:
                 'Estado de la bicicleta': self.estado,
                 'Descripción del problema': self.problema,
                 'Solución y/o reparación propuesta y presupuesto': self.solucion,
-                'Factura de compra': self.factura_compra[0].url if self.factura_compra else '',
-                'Factura de venta': self.factura_venta[0].url if self.factura_venta else '',
-                'Imágenes': self.fotos_problema[0].url if self.fotos_problema else '',
-                'Vídeos': self.videos_problema[0].url if self.videos_problema else ''
+                'Factura de compra': {'type': 'hyperlink', 'url': self.factura_compra[0].url, 'text': self.factura_compra[0].name} if self.factura_compra else '',
+                'Factura de venta': {'type': 'hyperlink', 'url': self.factura_venta[0].url, 'text': self.factura_venta[0].name} if self.factura_venta else '',
+                'Imágenes': {'type': 'hyperlink', 'url': self.fotos_problema[0].url, 'text': self.fotos_problema[0].name} if self.fotos_problema else '',
+                'Vídeos': {'type': 'hyperlink', 'url': self.videos_problema[0].url, 'text': self.videos_problema[0].name} if self.videos_problema else ''
             }
         elif brand == 'Kogel':
             return {
@@ -450,10 +450,10 @@ class WarrantyFormData:
                 'Estado del producto': self.estado,
                 'Descripción del problema': self.problema,
                 'Solución y/o reparación propuesta y presupuesto': 'No aplicable',
-                'Factura de compra': self.factura_compra[0].url if self.factura_compra else '',
-                'Factura de venta': self.factura_venta[0].url if self.factura_venta else '',
-                'Imágenes': self.fotos_problema[0].url if self.fotos_problema else '',
-                'Vídeos': self.videos_problema[0].url if self.videos_problema else ''
+                'Factura de compra': {'type': 'hyperlink', 'url': self.factura_compra[0].url, 'text': self.factura_compra[0].name} if self.factura_compra else '',
+                'Factura de venta': {'type': 'hyperlink', 'url': self.factura_venta[0].url, 'text': self.factura_venta[0].name} if self.factura_venta else '',
+                'Imágenes': {'type': 'hyperlink', 'url': self.fotos_problema[0].url, 'text': self.fotos_problema[0].name} if self.fotos_problema else '',
+                'Vídeos': {'type': 'hyperlink', 'url': self.videos_problema[0].url, 'text': self.videos_problema[0].name} if self.videos_problema else ''
             }
         else:
             # Generic format

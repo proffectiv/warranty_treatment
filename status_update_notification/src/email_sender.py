@@ -149,28 +149,28 @@ class EmailSender:
                 return False
             
             # Create summary email content
-            subject = f"📊 Status Update Notifications - Daily Summary"
+            subject = f"Estado de Garantía - Resumen Diario"
             
             html_content = f"""
             <html>
             <body>
-                <h2>Status Update Notifications - Daily Summary</h2>
+                <h2>Estado de Garantía - Resumen Diario</h2>
                 
                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                    <h3>Email Sending Results</h3>
+                    <h3>Resultados de Envío de Emails</h3>
                     <ul>
-                        <li><strong>Total notifications processed:</strong> {results['total_emails']}</li>
-                        <li><strong>Successfully sent:</strong> {results['sent_successfully']}</li>
-                        <li><strong>Failed:</strong> {results['failed']}</li>
+                        <li><strong>Total de notificaciones procesadas:</strong> {results['total_emails']}</li>
+                        <li><strong>Enviadas correctamente:</strong> {results['sent_successfully']}</li>
+                        <li><strong>Fallidas:</strong> {results['failed']}</li>
                     </ul>
                 </div>
                 
                 {self._create_failed_tickets_section(results.get('failed_tickets', []))}
                 
-                <p>This is an automated summary from the warranty status update notification system.</p>
+                <p>Este es un resumen automático del sistema de notificaciones de estado de garantía.</p>
                 
                 <br>
-                <p>Automation System - PROFFECTIV</p>
+                <p>Sistema de Automatización de Notificaciones de Estado de Garantía - PROFFECTIV</p>
             </body>
             </html>
             """

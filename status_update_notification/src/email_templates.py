@@ -35,7 +35,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
         modelo = ticket_data.get('Modelo', 'N/A')
         
         if new_status == 'Tramitada':
-            subject = "📋 Actualización de Garantía - En Tramitación"
+            subject = "Actualización de Estado de Garantía - En Trámite"
             html_content = f"""
             <html>
             <body>
@@ -62,7 +62,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <p>Nuestro equipo técnico está revisando su caso detalladamente. Le mantendremos informado sobre cualquier actualización adicional.</p>
                 
-                <p>Si tiene alguna pregunta, no dude en contactarnos indicando su número de ticket.</p>
+                <p>Si tiene alguna pregunta, no dude en contactarnos a través de nuestro correo electrónico <a href="mailto:info@proffectiv.com">info@proffectiv.com</a> indicando su número de ticket.</p>
                 
                 <br>
                 <p>Saludos cordiales,</p>
@@ -79,7 +79,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
             html_content = f"""
             <html>
             <body>
-                <h2>¡Buenas Noticias! Su Garantía Ha Sido Aceptada</h2>
+                <h2>Su Garantía Ha Sido Aceptada</h2>
                 
                 <div style="background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;">
                     <h3>✅ Garantía ACEPTADA</h3>
@@ -102,7 +102,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <div style="background-color: #cce5ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3>Próximos Pasos</h3>
-                    <p>Nos pondremos en contacto con usted en las próximas 48 horas para coordinar:</p>
+                    <p>En breve, uno de nuestros agentes se pondrá en contacto con usted para coordinar:</p>
                     <ul>
                         <li>El proceso de reparación o reemplazo</li>
                         <li>Instrucciones de envío (si aplica)</li>
@@ -111,6 +111,8 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 </div>
                 
                 <p>Gracias por confiar en PROFFECTIV. Estamos comprometidos con brindarle el mejor servicio.</p>
+                
+                <p>Si tiene alguna pregunta, no dude en contactarnos a través de nuestro correo electrónico <a href="mailto:info@proffectiv.com">info@proffectiv.com</a> indicando su número de ticket.</p>
                 
                 <br>
                 <p>Saludos cordiales,</p>
@@ -150,12 +152,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3>¿Necesita Más Información?</h3>
-                    <p>Si desea conocer los motivos específicos de esta decisión o tiene preguntas adicionales, le recomendamos:</p>
-                    <ul>
-                        <li>Contactarnos directamente indicando su número de ticket</li>
-                        <li>Revisar nuestros términos y condiciones de garantía</li>
-                        <li>Consultar sobre opciones de reparación con costo</li>
-                    </ul>
+                    <p>En breve, uno de nuestros agentes se pondrá en contacto con usted para informale sobre los motivos de la denegación de su solicitud de garantía y como proceder.</p>
                 </div>
                 
                 <p>Agradecemos su comprensión y seguimos a su disposición para cualquier consulta adicional.</p>

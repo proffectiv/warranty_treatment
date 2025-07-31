@@ -8,7 +8,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 # SequenceMatcher removed - no longer needed
 from openpyxl import load_workbook
-from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.styles import Font
 
 # Import logging filter from root directory
 import os
@@ -87,112 +87,8 @@ def find_column_index(worksheet, column_name):
             return col_idx
     return None
 
-def find_first_empty_row_within_validation(worksheet, column_index):
-    """Find the first empty row within the existing data validation range"""
-    try:
-        # Find the data validation range for our column
-        validation_end_row = None
-        
-        for dv in worksheet.data_validations:
-            for range_obj in dv.ranges:
-                if range_obj.min_col <= column_index <= range_obj.max_col:
-                    validation_end_row = range_obj.max_row
-                    logger.info(f"Found data validation range ending at row {validation_end_row} for column {column_index}")
-                    break
-            if validation_end_row:
-                break
-        
-        if not validation_end_row:
-            logger.warning(f"No data validation found for column {column_index}")
-            return None
-            
-        # Find the first empty row within the validation range
-        # Check from row 2 (after headers) to the end of validation range
-        for row in range(2, validation_end_row + 1):
-            # Check if this row is empty (no ticket ID)
-            ticket_id_cell = worksheet.cell(row=row, column=1)  # Assuming Ticket ID is in column 1
-            if not ticket_id_cell.value or not str(ticket_id_cell.value).strip():
-                logger.info(f"Found empty row {row} within validation range (ends at {validation_end_row})")
-                return row
-                
-        # If no empty row found within range, we need to extend the validation
-        logger.warning(f"No empty rows found within validation range (2-{validation_end_row})")
-        return None
-        
-    except Exception as e:
-        logger.error(f"Error finding empty row within validation range: {str(e)}")
-        return None
-
-def extend_data_validation_range(worksheet, column_index, new_row):
-    """Extend existing data validation range to include the new row"""
-    try:
-        # Find all data validation rules that include our column
-        validations_to_update = []
-        
-        for dv in list(worksheet.data_validations):
-            for range_obj in dv.ranges:
-                # Check if this range includes our Estado column
-                if range_obj.min_col <= column_index <= range_obj.max_col:
-                    validations_to_update.append((dv, range_obj))
-                    logger.info(f"Found validation range: {range_obj.coord} (rows {range_obj.min_row}-{range_obj.max_row})")
-                    break
-        
-        if not validations_to_update:
-            logger.warning(f"No data validation found for column {column_index}")
-            return
-        
-        # Update each validation rule
-        for dv, matching_range in validations_to_update:
-            # Check if new_row is already within the range
-            if matching_range.min_row <= new_row <= matching_range.max_row:
-                logger.info(f"Row {new_row} is already within validation range {matching_range.coord}")
-                continue
-                
-            # Remove the old validation
-            worksheet.data_validations.remove(dv)
-            
-            # Create new validation with same properties
-            new_dv = DataValidation(
-                type=dv.type,
-                formula1=dv.formula1,
-                formula2=dv.formula2,
-                showDropDown=dv.showDropDown,
-                showInputMessage=dv.showInputMessage,
-                showErrorMessage=dv.showErrorMessage,
-                errorTitle=dv.errorTitle,
-                error=dv.error,
-                promptTitle=dv.promptTitle,
-                prompt=dv.prompt
-            )
-            
-            # Add all ranges, extending the one that matches our column
-            for range_obj in dv.ranges:
-                if range_obj == matching_range:
-                    # Extend this range to include the new row
-                    start_col = range_obj.min_col
-                    end_col = range_obj.max_col
-                    start_row = range_obj.min_row
-                    end_row = max(range_obj.max_row, new_row)
-                    
-                    # Create extended range string
-                    start_cell = worksheet.cell(row=start_row, column=start_col).coordinate
-                    end_cell = worksheet.cell(row=end_row, column=end_col).coordinate
-                    extended_range = f"{start_cell}:{end_cell}"
-                    
-                    new_dv.add(extended_range)
-                    logger.info(f"Extended data validation range from {range_obj.coord} to: {extended_range}")
-                else:
-                    # Keep original range for other columns
-                    new_dv.add(range_obj.coord)
-            
-            # Add the updated validation rule
-            worksheet.add_data_validation(new_dv)
-            logger.info(f"Updated data validation for column {column_index}")
-            
-    except Exception as e:
-        logger.error(f"Error extending data validation range: {str(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
+# Removed find_first_empty_row_within_validation and extend_data_validation_range functions
+# since we now use worksheet.insert_rows() which automatically handles data validation ranges
 
 def update_excel_file(form_data: WarrantyFormData):
     """Main function to update Excel file in Dropbox using WarrantyFormData object with openpyxl to preserve formatting"""
@@ -237,55 +133,32 @@ def update_excel_file(form_data: WarrantyFormData):
         
         # Find all rows with ticket ID data to understand the data structure
         ticket_id_col = headers.get('Ticket ID', 1)
-        estado_col = headers.get('Estado')
         
-        # First, try to find an empty row within the existing data validation range
-        next_row = None
-        if estado_col:
-            next_row = find_first_empty_row_within_validation(worksheet, estado_col)
+        # NEW APPROACH: Always insert at row 2 (after headers) and shift existing data down
+        insert_row = 2
+        logger.info(f"Will insert new row at position {insert_row} (after headers)")
         
-        if next_row:
-            logger.info(f"Found empty row {next_row} within existing data validation range")
+        # Find the last row with actual data to know how many rows to shift
+        data_rows = []
+        scan_range = min(worksheet.max_row + 1, 2000)  # Limit scan to prevent performance issues
+        
+        for row in range(2, scan_range):
+            ticket_id = worksheet.cell(row=row, column=ticket_id_col).value
+            if ticket_id and str(ticket_id).strip():
+                data_rows.append(row)
+        
+        if data_rows:
+            actual_last_row = max(data_rows)
+            logger.info(f"Found existing data up to row {actual_last_row}. Will shift existing data down by 1 row.")
+            
+            # Insert a new row at position 2, which automatically shifts existing data down
+            worksheet.insert_rows(insert_row, 1)
+            logger.info(f"Inserted new row at position {insert_row}")
         else:
-            # Fallback to the original logic: find actual data rows and add after them
-            data_rows = []
-            
-            # Scan a reasonable range to find actual data (not the full max_row which includes formatting)
-            scan_range = min(worksheet.max_row + 1, 2000)  # Limit scan to prevent performance issues
-            
-            for row in range(2, scan_range):
-                ticket_id = worksheet.cell(row=row, column=ticket_id_col).value
-                if ticket_id and str(ticket_id).strip():
-                    data_rows.append(row)
-            
-            if not data_rows:
-                # No existing data, start at row 2
-                next_row = 2
-                logger.info("No existing data found, starting at row 2")
-            else:
-                # Find the last row with data and add after it
-                actual_last_row = max(data_rows)
-                first_data_row = min(data_rows)
-                total_data_rows = len(data_rows)
-                
-                logger.info(f"Found {total_data_rows} data rows, range: {first_data_row}-{actual_last_row}")
-                next_row = actual_last_row + 1
+            logger.info("No existing data found, will add first data row at position 2")
         
-        current_max_row = worksheet.max_row
-        
-        logger.info(f"Worksheet max_row: {current_max_row}")
-        logger.info(f"Will write to row: {next_row}")
-        
-        # Double-check that we're not overwriting existing data
-        test_cell = worksheet.cell(row=next_row, column=ticket_id_col)
-        if test_cell.value is not None:
-            logger.warning(f"Row {next_row} already has data! Ticket ID: {test_cell.value}")
-            # Find the actual next empty row
-            for row in range(next_row, worksheet.max_row + 100):
-                if worksheet.cell(row=row, column=ticket_id_col).value is None:
-                    next_row = row
-                    logger.info(f"Found actual empty row: {next_row}")
-                    break
+        # The row to write to is always row 2 after insertion
+        next_row = insert_row
         
         # Prepare new row data using form_data
         new_row_data = form_data.to_excel_row(brand)
@@ -301,20 +174,33 @@ def update_excel_file(form_data: WarrantyFormData):
                 col_idx = headers[column_name]
                 cell = worksheet.cell(row=next_row, column=col_idx)
                 old_value = cell.value
-                cell.value = value
+                
+                # Handle hyperlink formatting for URL fields
+                if isinstance(value, dict) and value.get('type') == 'hyperlink':
+                    cell.value = value['text']
+                    cell.hyperlink = value['url']
+                    cell.font = Font(color="0000FF", underline="single")  # Blue underlined text
+                    logger.info(f"Writing hyperlink to cell {cell.coordinate}: '{value['text']}' -> '{value['url']}'")
+                else:
+                    cell.value = value
+                    logger.info(f"Writing to cell {cell.coordinate} (row {next_row}, col {col_idx}): '{column_name}' = '{value}' (was: '{old_value}')")
+                
                 cells_written += 1
                 
                 # Remember Estado column for validation extension
                 if column_name == 'Estado':
                     estado_col_idx = col_idx
                 
-                logger.info(f"Writing to cell {cell.coordinate} (row {next_row}, col {col_idx}): '{column_name}' = '{value}' (was: '{old_value}')")
             else:
                 logger.warning(f"Column '{column_name}' not found in Excel headers")
         
         # After writing all data, extend data validation for Estado column if needed
+        # Since we inserted a row, the data validation ranges are automatically extended by openpyxl
+        # but we may need to verify and adjust if necessary
         if estado_col_idx:
-            extend_data_validation_range(worksheet, estado_col_idx, next_row)
+            logger.info(f"Data validation should be automatically extended due to row insertion at {next_row}")
+            # The extend_data_validation_range function is no longer needed since insert_rows handles this
+            # extend_data_validation_range(worksheet, estado_col_idx, next_row)
         
         logger.info(f"Total cells written: {cells_written}")
         
