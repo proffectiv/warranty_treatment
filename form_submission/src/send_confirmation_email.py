@@ -18,6 +18,18 @@ load_dotenv()
 # Set up secure logging
 logger = setup_secure_logging('confirmation_email')
 
+def set_brand_logo(form_data: WarrantyFormData):
+    if form_data.brand == 'Conway':
+        return "<img src='https://conwaybikes.cstatic.io/media/image/96/76/e1/conway-top-logo.png' alt='Conway Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    elif form_data.brand == 'Cycplus':
+        return "<img src='https://www.cycplus.com/cdn/shop/files/logo_1c8cfa7d-c3c4-447d-8b41-1da8d976a77e_180x.png?v=1715742533' alt='Cycplus Logo' style='width: auto; height: 20px; padding-bottom: 10px;'>"
+    elif form_data.brand == 'Dare':
+        return "<img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZuL0-8gO2x88dlm4OZEMLmFUtXJJdTOGuA&s' alt='Dare Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    elif form_data.brand == 'Kogel':
+        return "<img src='https://www.kogel.cc/cdn/shop/files/Kogel_Logo_2.svg?v=1710877689&width=270' alt='Kogel Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    else:
+        return "<img src='https://static.wixstatic.com/media/3744a0_1a3cb44fb2dd4e029d937ba13930e693~mv2.png' alt='Proffectiv Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+
 def create_confirmation_email(form_data: WarrantyFormData):
     """Create confirmation email content using WarrantyFormData object"""
     
@@ -50,6 +62,7 @@ def create_confirmation_email(form_data: WarrantyFormData):
             
             <h3>Información del Producto</h3>
             <ul>
+                {set_brand_logo(form_data)}
                 <li><strong>Marca:</strong> {form_data.brand}</li>
                 <li><strong>Modelo:</strong> {form_data.modelo}</li>
                 {"<li><strong>Talla:</strong> " + form_data.talla + "</li>" if form_data.talla != 'No aplicable' else ""}
@@ -68,7 +81,12 @@ def create_confirmation_email(form_data: WarrantyFormData):
         <p>Saludos cordiales,<p>
         <p>El equipo de PROFFECTIV</p>
         
-        <hr>
+        <hr style="margin-top: 50px;">
+        <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
+        <p>Proffectiv S.L.</p>
+        <p>Crta. de Caldes, 31, 08420 Canovelles</p>
+        <p>Barcelona, España</p>
+        <p>NIF: B67308452</p>
     </body>
     </html>
     """

@@ -15,6 +15,19 @@ from log_filter import setup_secure_logging
 # Set up secure logging
 logger = setup_secure_logging('email_templates')
 
+def set_brand_logo(brand: str) -> str:
+    """Set brand logo"""
+    if brand == 'Conway':
+        return "<img src='https://conwaybikes.cstatic.io/media/image/96/76/e1/conway-top-logo.png' alt='Conway Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    elif brand == 'Cycplus':
+        return "<img src='https://www.cycplus.com/cdn/shop/files/logo_1c8cfa7d-c3c4-447d-8b41-1da8d976a77e_180x.png?v=1715742533' alt='Cycplus Logo' style='width: auto; height: 20px; padding-bottom: 10px;'>"
+    elif brand == 'Dare':
+        return "<img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlZuL0-8gO2x88dlm4OZEMLmFUtXJJdTOGuA&s' alt='Dare Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    elif brand == 'Kogel':
+        return "<img src='https://www.kogel.cc/cdn/shop/files/Kogel_Logo_2.svg?v=1710877689&width=270' alt='Kogel Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+    else:
+        return "<img src='https://static.wixstatic.com/media/3744a0_1a3cb44fb2dd4e029d937ba13930e693~mv2.png' alt='Proffectiv Logo' style='width: auto; height: 40px; padding-bottom: 10px;'>"
+
 def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> tuple:
     """
     Create status update email content based on the new status
@@ -53,6 +66,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
                     <h3>Detalles de la Solicitud</h3>
                     <ul>
+                        {set_brand_logo(brand)}
                         <li><strong>Ticket ID:</strong> {ticket_id}</li>
                         <li><strong>Marca:</strong> {brand}</li>
                         <li><strong>Modelo:</strong> {modelo}</li>
@@ -70,6 +84,13 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <hr>
                 <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+
+                <hr style="margin-top: 50px;">
+                <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
+                <p>Proffectiv S.L.</p>
+                <p>Crta. de Caldes, 31, 08420 Canovelles</p>
+                <p>Barcelona, España</p>
+                <p>NIF: B67308452</p>
             </body>
             </html>
             """
@@ -93,6 +114,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
                     <h3>Detalles de la Solicitud Aceptada</h3>
                     <ul>
+                        {set_brand_logo(brand)}
                         <li><strong>Ticket ID:</strong> {ticket_id}</li>
                         <li><strong>Marca:</strong> {brand}</li>
                         <li><strong>Modelo:</strong> {modelo}</li>
@@ -120,6 +142,13 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <hr>
                 <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+
+                <hr style="margin-top: 50px;">
+                <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
+                <p>Proffectiv S.L.</p>
+                <p>Crta. de Caldes, 31, 08420 Canovelles</p>
+                <p>Barcelona, España</p>
+                <p>NIF: B67308452</p>
             </body>
             </html>
             """
@@ -143,6 +172,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
                     <h3>Detalles de la Solicitud</h3>
                     <ul>
+                        {set_brand_logo(brand)}
                         <li><strong>Ticket ID:</strong> {ticket_id}</li>
                         <li><strong>Marca:</strong> {brand}</li>
                         <li><strong>Modelo:</strong> {modelo}</li>
@@ -163,6 +193,13 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <hr>
                 <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+
+                <hr style="margin-top: 50px;">
+                <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
+                <p>Proffectiv S.L.</p>
+                <p>Crta. de Caldes, 31, 08420 Canovelles</p>
+                <p>Barcelona, España</p>
+                <p>NIF: B67308452</p>
             </body>
             </html>
             """

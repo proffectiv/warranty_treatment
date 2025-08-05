@@ -131,7 +131,7 @@ class EmailSender:
         
         logger.info(f"Batch email sending completed: {results['sent_successfully']} sent, {results['failed']} failed")
         return results
-    
+
     def send_summary_email_to_admin(self, results: Dict[str, Any]) -> bool:
         """
         Send summary email to admin about status update notifications
@@ -171,6 +171,13 @@ class EmailSender:
                 
                 <br>
                 <p>Sistema de Automatización de Notificaciones de Estado de Garantía - PROFFECTIV</p>
+
+                <hr style="margin-top: 50px;">
+                <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
+                <p>Proffectiv S.L.</p>
+                <p>Crta. de Caldes, 31, 08420 Canovelles</p>
+                <p>Barcelona, España</p>
+                <p>NIF: B67308452</p>
             </body>
             </html>
             """

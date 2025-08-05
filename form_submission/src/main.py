@@ -55,7 +55,8 @@ def process_warranty_form(webhook_data):
         return False
     
     # Generate unique ticket ID
-    ticket_id = str(uuid.uuid4())
+    uuid_length = 8
+    ticket_id = str(uuid.uuid4().hex)[:uuid_length]
     logger.info(f"Generated Ticket ID: {ticket_id}")
     
     # Create centralized form data object
