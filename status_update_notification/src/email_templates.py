@@ -80,10 +80,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 
                 <br>
                 <p>Saludos cordiales,</p>
-                <p>El equipo de PROFFECTIV</p>
-                
-                <hr>
-                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+                <p>El equipo de PROFFECTIV</p> 
 
                 <hr style="margin-top: 50px;">
                 <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
@@ -91,6 +88,9 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <p>Crta. de Caldes, 31, 08420 Canovelles</p>
                 <p>Barcelona, España</p>
                 <p>NIF: B67308452</p>
+                
+                <hr>
+                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
             </body>
             </html>
             """
@@ -140,8 +140,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <p>Saludos cordiales,</p>
                 <p>El equipo de PROFFECTIV</p>
                 
-                <hr>
-                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+                
 
                 <hr style="margin-top: 50px;">
                 <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
@@ -149,6 +148,9 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <p>Crta. de Caldes, 31, 08420 Canovelles</p>
                 <p>Barcelona, España</p>
                 <p>NIF: B67308452</p>
+
+                <hr>
+                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
             </body>
             </html>
             """
@@ -191,8 +193,7 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <p>Saludos cordiales,</p>
                 <p>El equipo de PROFFECTIV</p>
                 
-                <hr>
-                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
+                
 
                 <hr style="margin-top: 50px;">
                 <img src="https://static.wixstatic.com/media/3744a0_dbf4e7e3b00047e5ba0d6e0a1c5d41d1~mv2.png" alt="Proffectiv Logo" style="width: auto; height: 40px; padding: 20px;">
@@ -200,6 +201,9 @@ def create_status_update_email(ticket_data: Dict[str, Any], new_status: str) -> 
                 <p>Crta. de Caldes, 31, 08420 Canovelles</p>
                 <p>Barcelona, España</p>
                 <p>NIF: B67308452</p>
+
+                <hr>
+                <p style="font-size: 12px; color: #666;">Este es un mensaje automático. Por favor, conserve su número de ticket para futuras consultas.</p>
             </body>
             </html>
             """

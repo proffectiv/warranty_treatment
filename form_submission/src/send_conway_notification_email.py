@@ -133,7 +133,7 @@ def create_conway_notification_email(form_data: WarrantyFormData):
         <div style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 20px 0;">
             <h3>Product Information</h3>
             <ul>
-                <li><img src="https://conwaybikes.cstatic.io/media/image/96/76/e1/conway-top-logo.png" alt="Conway Logo" style="width: auto; height: 40px; padding-bottom: 10px;"></li>
+                <img src="https://conwaybikes.cstatic.io/media/image/96/76/e1/conway-top-logo.png" alt="Conway Logo" style="width: auto; height: 40px; padding-bottom: 10px;">
                 <li><strong>Brand:</strong> {marca}</li>
                 <li><strong>Model:</strong> {modelo}</li>
                 {"<li><strong>Size:</strong> " + str(talla) + "</li>" if talla != 'Not specified' else ""}
