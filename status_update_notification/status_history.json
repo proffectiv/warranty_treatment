@@ -1,4 +1,14 @@
 {
-  "last_updated": "2025-08-05T07:01:28.121764",
-  "tickets": {}
+  "last_updated": "2025-08-05T09:38:09.409864",
+  "tickets": {
+    "Conway_14b84683": {
+      "status": "Tramitada",
+      "last_updated": "2025-08-05T09:38:09.409797",
+      "ticket_id": "14b84683",
+      "brand": "Conway",
+      "email": "cabagu35@gmail.com",
+      "empresa": "Aura Systems",
+      "creation_date": "05/08/2025"
+    }
+  }
 }
