@@ -1,4 +1,14 @@
 {
-  "last_updated": "2025-11-14T08:01:44.838045",
-  "tickets": {}
+  "last_updated": "2025-11-15T08:01:38.515568",
+  "tickets": {
+    "Conway_538c3383": {
+      "status": "Tramitada",
+      "last_updated": "2025-11-15T08:01:38.515512",
+      "ticket_id": "538c3383",
+      "brand": "Conway",
+      "email": "GARANTIAS@GUIJARROTOTESPORT.ES",
+      "empresa": "GUIJARRO TOT ESPORT",
+      "creation_date": "14/11/2025"
+    }
+  }
 }
