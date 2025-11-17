@@ -224,7 +224,7 @@ def send_notification_email(form_data: WarrantyFormData):
                     # Attach file to email
                     with open(temp_file_path, 'rb') as attachment:
                         # Guess the content type based on the file's name
-                        ctype, encoding = mimetypes.guess_type(temp_file_path)
+                        ctype, encoding = mimetypes.guess_type(file_info['name'])
                         if ctype is None or encoding is not None:
                             ctype = 'application/octet-stream'
                         
