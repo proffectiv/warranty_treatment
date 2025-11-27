@@ -1,14 +1,32 @@
 {
-  "last_updated": "2025-11-26T08:01:38.959854",
+  "last_updated": "2025-11-27T08:01:39.809812",
   "tickets": {
     "Conway_538c3383": {
       "status": "Tramitada",
-      "last_updated": "2025-11-26T08:01:38.959790",
+      "last_updated": "2025-11-27T08:01:39.809752",
       "ticket_id": "538c3383",
       "brand": "Conway",
       "email": "GARANTIAS@GUIJARROTOTESPORT.ES",
       "empresa": "GUIJARRO TOT ESPORT",
       "creation_date": "14/11/2025"
+    },
+    "Conway_8c43fd30": {
+      "status": "Tramitada",
+      "last_updated": "2025-11-27T08:01:39.809737",
+      "ticket_id": "8c43fd30",
+      "brand": "Conway",
+      "email": "alcubikes@alcubikes.com",
+      "empresa": "ALCUBIKES S.L.",
+      "creation_date": "27/11/2025"
+    },
+    "Conway_c75ef1e3": {
+      "status": "Tramitada",
+      "last_updated": "2025-11-27T08:01:39.809746",
+      "ticket_id": "c75ef1e3",
+      "brand": "Conway",
+      "email": "alcubikes@alcubikes.com",
+      "empresa": "ALCUBIKES S.L.",
+      "creation_date": "27/11/2025"
     }
   }
 }
