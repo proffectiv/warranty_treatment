@@ -1,9 +1,9 @@
 {
-  "last_updated": "2025-12-04T08:01:39.833023",
+  "last_updated": "2025-12-05T08:01:45.772513",
   "tickets": {
     "Conway_538c3383": {
       "status": "Tramitada",
-      "last_updated": "2025-12-04T08:01:39.832965",
+      "last_updated": "2025-12-05T08:01:45.772463",
       "ticket_id": "538c3383",
       "brand": "Conway",
       "email": "GARANTIAS@GUIJARROTOTESPORT.ES",
@@ -12,7 +12,7 @@
     },
     "Conway_8c43fd30": {
       "status": "Tramitada",
-      "last_updated": "2025-12-04T08:01:39.832949",
+      "last_updated": "2025-12-05T08:01:45.772451",
       "ticket_id": "8c43fd30",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -21,12 +21,21 @@
     },
     "Conway_c75ef1e3": {
       "status": "Tramitada",
-      "last_updated": "2025-12-04T08:01:39.832959",
+      "last_updated": "2025-12-05T08:01:45.772458",
       "ticket_id": "c75ef1e3",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
       "empresa": "ALCUBIKES S.L.",
       "creation_date": "27/11/2025"
+    },
+    "Conway_289a2c69": {
+      "status": "Tramitada",
+      "last_updated": "2025-12-05T08:01:45.772441",
+      "ticket_id": "289a2c69",
+      "brand": "Conway",
+      "email": "ventas@smselectrics.com",
+      "empresa": "SMART MOBILITY SYSTEMS SL",
+      "creation_date": "04/12/2025"
     }
   }
 }
