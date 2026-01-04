@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-01-03T08:01:43.447425",
+  "last_updated": "2026-01-04T08:01:41.319343",
   "tickets": {
     "Conway_538c3383": {
       "status": "Tramitada",
-      "last_updated": "2026-01-03T08:01:43.447353",
+      "last_updated": "2026-01-04T08:01:41.319280",
       "ticket_id": "538c3383",
       "brand": "Conway",
       "email": "GARANTIAS@GUIJARROTOTESPORT.ES",
@@ -12,7 +12,7 @@
     },
     "Conway_8c43fd30": {
       "status": "Tramitada",
-      "last_updated": "2026-01-03T08:01:43.447340",
+      "last_updated": "2026-01-04T08:01:41.319270",
       "ticket_id": "8c43fd30",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -21,7 +21,7 @@
     },
     "Conway_c75ef1e3": {
       "status": "Tramitada",
-      "last_updated": "2026-01-03T08:01:43.447347",
+      "last_updated": "2026-01-04T08:01:41.319276",
       "ticket_id": "c75ef1e3",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -30,7 +30,7 @@
     },
     "Conway_289a2c69": {
       "status": "Tramitada",
-      "last_updated": "2026-01-03T08:01:43.447333",
+      "last_updated": "2026-01-04T08:01:41.319263",
       "ticket_id": "289a2c69",
       "brand": "Conway",
       "email": "ventas@smselectrics.com",
@@ -39,7 +39,7 @@
     },
     "Conway_d1f22727": {
       "status": "Aceptada",
-      "last_updated": "2026-01-03T08:01:43.447319",
+      "last_updated": "2026-01-04T08:01:41.319252",
       "ticket_id": "d1f22727",
       "brand": "Conway",
       "email": "oscar_lopez_alvarez@hotmail.com",
