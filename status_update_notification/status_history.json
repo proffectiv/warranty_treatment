@@ -1,18 +1,9 @@
 {
-  "last_updated": "2026-02-17T08:01:45.388695",
+  "last_updated": "2026-02-18T08:01:50.375116",
   "tickets": {
-    "Conway_538c3383": {
-      "status": "Tramitada",
-      "last_updated": "2026-02-11T08:01:47.737173",
-      "ticket_id": "538c3383",
-      "brand": "Conway",
-      "email": "GARANTIAS@GUIJARROTOTESPORT.ES",
-      "empresa": "GUIJARRO TOT ESPORT",
-      "creation_date": "14/11/2025"
-    },
     "Conway_8c43fd30": {
       "status": "Tramitada",
-      "last_updated": "2026-02-17T08:01:45.388638",
+      "last_updated": "2026-02-18T08:01:49.073916",
       "ticket_id": "8c43fd30",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -21,7 +12,7 @@
     },
     "Conway_c75ef1e3": {
       "status": "Tramitada",
-      "last_updated": "2026-02-17T08:01:45.388643",
+      "last_updated": "2026-02-18T08:01:49.073924",
       "ticket_id": "c75ef1e3",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -30,7 +21,7 @@
     },
     "Conway_289a2c69": {
       "status": "Tramitada",
-      "last_updated": "2026-02-17T08:01:45.388633",
+      "last_updated": "2026-02-18T08:01:49.073910",
       "ticket_id": "289a2c69",
       "brand": "Conway",
       "email": "ventas@smselectrics.com",
@@ -39,7 +30,7 @@
     },
     "Conway_d1f22727": {
       "status": "Aceptada",
-      "last_updated": "2026-02-17T08:01:45.388625",
+      "last_updated": "2026-02-18T08:01:49.073904",
       "ticket_id": "d1f22727",
       "brand": "Conway",
       "email": "oscar_lopez_alvarez@hotmail.com",
@@ -48,12 +39,21 @@
     },
     "Conway_c341772c": {
       "status": "Tramitada",
-      "last_updated": "2026-02-17T08:01:45.388615",
+      "last_updated": "2026-02-18T08:01:49.073898",
       "ticket_id": "c341772c",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
       "empresa": "CICLES DESNIVELL SL",
       "creation_date": "12/01/2026"
+    },
+    "Conway_45f146fd": {
+      "status": "Tramitada",
+      "last_updated": "2026-02-18T08:01:49.073889",
+      "ticket_id": "45f146fd",
+      "brand": "Conway",
+      "email": "tiendamanrubiabikes@gmail.com",
+      "empresa": "MANRUBIABIKES",
+      "creation_date": "17/02/2026"
     }
   }
 }
