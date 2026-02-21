@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-02-20T08:01:53.044227",
+  "last_updated": "2026-02-21T08:01:50.455050",
   "tickets": {
     "Conway_8c43fd30": {
       "status": "Tramitada",
-      "last_updated": "2026-02-20T08:01:53.044161",
+      "last_updated": "2026-02-21T08:01:50.454993",
       "ticket_id": "8c43fd30",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -12,7 +12,7 @@
     },
     "Conway_c75ef1e3": {
       "status": "Tramitada",
-      "last_updated": "2026-02-20T08:01:53.044167",
+      "last_updated": "2026-02-21T08:01:50.454996",
       "ticket_id": "c75ef1e3",
       "brand": "Conway",
       "email": "alcubikes@alcubikes.com",
@@ -21,7 +21,7 @@
     },
     "Conway_289a2c69": {
       "status": "Tramitada",
-      "last_updated": "2026-02-20T08:01:53.044156",
+      "last_updated": "2026-02-21T08:01:50.454991",
       "ticket_id": "289a2c69",
       "brand": "Conway",
       "email": "ventas@smselectrics.com",
@@ -30,7 +30,7 @@
     },
     "Conway_d1f22727": {
       "status": "Aceptada",
-      "last_updated": "2026-02-20T08:01:53.044151",
+      "last_updated": "2026-02-21T08:01:50.454988",
       "ticket_id": "d1f22727",
       "brand": "Conway",
       "email": "oscar_lopez_alvarez@hotmail.com",
@@ -39,7 +39,7 @@
     },
     "Conway_c341772c": {
       "status": "Tramitada",
-      "last_updated": "2026-02-20T08:01:53.044144",
+      "last_updated": "2026-02-21T08:01:50.454985",
       "ticket_id": "c341772c",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
@@ -48,7 +48,7 @@
     },
     "Conway_45f146fd": {
       "status": "Tramitada",
-      "last_updated": "2026-02-20T08:01:53.044130",
+      "last_updated": "2026-02-21T08:01:50.454978",
       "ticket_id": "45f146fd",
       "brand": "Conway",
       "email": "tiendamanrubiabikes@gmail.com",
