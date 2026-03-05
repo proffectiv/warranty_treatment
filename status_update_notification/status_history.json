@@ -1,36 +1,9 @@
 {
-  "last_updated": "2026-03-04T08:01:44.876317",
+  "last_updated": "2026-03-05T08:01:45.398418",
   "tickets": {
-    "Conway_8c43fd30": {
-      "status": "Tramitada",
-      "last_updated": "2026-02-24T08:01:49.912681",
-      "ticket_id": "8c43fd30",
-      "brand": "Conway",
-      "email": "alcubikes@alcubikes.com",
-      "empresa": "ALCUBIKES S.L.",
-      "creation_date": "27/11/2025"
-    },
-    "Conway_c75ef1e3": {
-      "status": "Tramitada",
-      "last_updated": "2026-02-24T08:01:49.912686",
-      "ticket_id": "c75ef1e3",
-      "brand": "Conway",
-      "email": "alcubikes@alcubikes.com",
-      "empresa": "ALCUBIKES S.L.",
-      "creation_date": "27/11/2025"
-    },
-    "Conway_289a2c69": {
-      "status": "Tramitada",
-      "last_updated": "2026-03-03T08:01:46.637615",
-      "ticket_id": "289a2c69",
-      "brand": "Conway",
-      "email": "ventas@smselectrics.com",
-      "empresa": "SMART MOBILITY SYSTEMS SL",
-      "creation_date": "04/12/2025"
-    },
     "Conway_d1f22727": {
       "status": "Aceptada",
-      "last_updated": "2026-03-04T08:01:44.876243",
+      "last_updated": "2026-03-05T08:01:43.659173",
       "ticket_id": "d1f22727",
       "brand": "Conway",
       "email": "oscar_lopez_alvarez@hotmail.com",
@@ -39,7 +12,7 @@
     },
     "Conway_c341772c": {
       "status": "Tramitada",
-      "last_updated": "2026-03-04T08:01:44.876239",
+      "last_updated": "2026-03-05T08:01:43.659165",
       "ticket_id": "c341772c",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
@@ -48,12 +21,21 @@
     },
     "Conway_45f146fd": {
       "status": "Tramitada",
-      "last_updated": "2026-03-04T08:01:44.876232",
+      "last_updated": "2026-03-05T08:01:43.659157",
       "ticket_id": "45f146fd",
       "brand": "Conway",
       "email": "tiendamanrubiabikes@gmail.com",
       "empresa": "MANRUBIABIKES",
       "creation_date": "17/02/2026"
+    },
+    "Conway_3c5c81cb": {
+      "status": "Tramitada",
+      "last_updated": "2026-03-05T08:01:43.659149",
+      "ticket_id": "3c5c81cb",
+      "brand": "Conway",
+      "email": "ciclesdesnivell@hotmail.com",
+      "empresa": "CICLES DESNIVELL SL",
+      "creation_date": "04/03/2026"
     }
   }
 }
