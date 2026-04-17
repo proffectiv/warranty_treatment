@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-16T07:01:41.794892",
+  "last_updated": "2026-04-17T07:01:43.052086",
   "tickets": {
     "Conway_d1f22727": {
       "status": "Aceptada",
@@ -21,7 +21,7 @@
     },
     "Conway_45f146fd": {
       "status": "Tramitada",
-      "last_updated": "2026-04-16T07:01:41.794834",
+      "last_updated": "2026-04-17T07:01:43.052038",
       "ticket_id": "45f146fd",
       "brand": "Conway",
       "email": "tiendamanrubiabikes@gmail.com",
@@ -30,7 +30,7 @@
     },
     "Conway_3c5c81cb": {
       "status": "Tramitada",
-      "last_updated": "2026-04-16T07:01:41.794827",
+      "last_updated": "2026-04-17T07:01:43.052028",
       "ticket_id": "3c5c81cb",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
