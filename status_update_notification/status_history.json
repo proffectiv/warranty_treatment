@@ -1,27 +1,9 @@
 {
-  "last_updated": "2026-04-20T07:01:43.897837",
+  "last_updated": "2026-04-21T07:01:49.455969",
   "tickets": {
-    "Conway_d1f22727": {
-      "status": "Aceptada",
-      "last_updated": "2026-03-09T08:01:46.394742",
-      "ticket_id": "d1f22727",
-      "brand": "Conway",
-      "email": "oscar_lopez_alvarez@hotmail.com",
-      "empresa": "Oscar Lopez Alvarez",
-      "creation_date": "10/12/2025"
-    },
-    "Conway_c341772c": {
-      "status": "Tramitada",
-      "last_updated": "2026-04-11T07:01:38.588344",
-      "ticket_id": "c341772c",
-      "brand": "Conway",
-      "email": "ciclesdesnivell@hotmail.com",
-      "empresa": "CICLES DESNIVELL SL",
-      "creation_date": "12/01/2026"
-    },
     "Conway_45f146fd": {
       "status": "Tramitada",
-      "last_updated": "2026-04-20T07:01:43.897782",
+      "last_updated": "2026-04-21T07:01:47.772180",
       "ticket_id": "45f146fd",
       "brand": "Conway",
       "email": "tiendamanrubiabikes@gmail.com",
@@ -30,12 +12,21 @@
     },
     "Conway_3c5c81cb": {
       "status": "Tramitada",
-      "last_updated": "2026-04-20T07:01:43.897771",
+      "last_updated": "2026-04-21T07:01:47.772172",
       "ticket_id": "3c5c81cb",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
       "empresa": "CICLES DESNIVELL SL",
       "creation_date": "04/03/2026"
+    },
+    "Conway_a28188d8": {
+      "status": "Tramitada",
+      "last_updated": "2026-04-21T07:01:47.772162",
+      "ticket_id": "a28188d8",
+      "brand": "Conway",
+      "email": "compras@nutriactivity.com",
+      "empresa": "NUTRIFACTORY SL",
+      "creation_date": "20/04/2026"
     }
   }
 }
