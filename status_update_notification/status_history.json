@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-04-23T07:01:47.287923",
+  "last_updated": "2026-04-24T07:01:41.408494",
   "tickets": {
     "Conway_45f146fd": {
       "status": "Tramitada",
-      "last_updated": "2026-04-23T07:01:47.287868",
+      "last_updated": "2026-04-24T07:01:41.408418",
       "ticket_id": "45f146fd",
       "brand": "Conway",
       "email": "tiendamanrubiabikes@gmail.com",
@@ -12,7 +12,7 @@
     },
     "Conway_3c5c81cb": {
       "status": "Tramitada",
-      "last_updated": "2026-04-23T07:01:47.287862",
+      "last_updated": "2026-04-24T07:01:41.408414",
       "ticket_id": "3c5c81cb",
       "brand": "Conway",
       "email": "ciclesdesnivell@hotmail.com",
@@ -21,12 +21,21 @@
     },
     "Conway_a28188d8": {
       "status": "Tramitada",
-      "last_updated": "2026-04-23T07:01:47.287854",
+      "last_updated": "2026-04-24T07:01:41.408410",
       "ticket_id": "a28188d8",
       "brand": "Conway",
       "email": "compras@nutriactivity.com",
       "empresa": "NUTRIFACTORY SL",
       "creation_date": "20/04/2026"
+    },
+    "Conway_fd484c50": {
+      "status": "Tramitada",
+      "last_updated": "2026-04-24T07:01:41.408403",
+      "ticket_id": "fd484c50",
+      "brand": "Conway",
+      "email": "ciclosmtb@yahoo.es",
+      "empresa": "Ciclosmtb",
+      "creation_date": "23/04/2026"
     }
   }
 }
